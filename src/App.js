@@ -1,23 +1,69 @@
-import logo from './logo.svg';
 import './App.css';
+import { useState, useEffect } from 'react';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
 
 function App() {
+  const [currentPage, setCurrentPage] = useState('login');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (token) {
+      setIsAuthenticated(true);
+      setCurrentPage('dashboard');
+      window.location.hash = 'dashboard';
+      return;
+    }
+
+    // Check URL hash on mount
+    const hash = window.location.hash.substring(1);
+    if (hash === 'register') {
+      setCurrentPage('register');
+    } else {
+      setCurrentPage('login');
+      window.location.hash = 'login';
+    }
+  }, []);
+
+  const showLogin = () => {
+    setCurrentPage('login');
+    setIsAuthenticated(false);
+    window.location.hash = 'login';
+  };
+
+  const showRegister = () => {
+    setCurrentPage('register');
+    window.location.hash = 'register';
+  };
+
+  const showDashboard = () => {
+    setCurrentPage('dashboard');
+    setIsAuthenticated(true);
+    window.location.hash = 'dashboard';
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    showLogin();
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      {!isAuthenticated ? (
+        currentPage === 'login' ? (
+          <Login 
+            onSwitchToRegister={showRegister} 
+            onSwitchToDashboard={showDashboard}
+          />
+        ) : (
+          <Register onSwitchToLogin={showLogin} />
+        )
+      ) : (
+        <Dashboard onLogout={handleLogout} />
+      )}
     </div>
   );
 }
