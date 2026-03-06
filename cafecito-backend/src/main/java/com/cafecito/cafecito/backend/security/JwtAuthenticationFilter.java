@@ -1,6 +1,6 @@
 package com.cafecito.cafecito.backend.security;
 
-import com.cafecito.cafecito.backend.repository.UserRepository;
+import com.cafecito.cafecito.backend.modules.auth.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
