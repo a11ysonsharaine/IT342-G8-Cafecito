@@ -1,0 +1,331 @@
+/* RegisterPage Styles */
+
+.register-page {
+  min-height: 100vh;
+  background-color: #F5EBDD;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px 24px;
+}
+
+.register-container {
+  width: 100%;
+  max-width: 520px;
+}
+
+/* Card */
+.register-card {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid #E8D8C3;
+  padding: 40px;
+}
+
+/* Header */
+.register-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.register-logo-wrapper {
+  width: 192px;
+  height: 192px;
+  margin: 0 auto 8px;
+}
+
+.register-logo-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.register-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.625rem;
+  font-weight: 700;
+  color: #2C1810;
+  margin-bottom: 4px;
+}
+
+.register-subtitle {
+  color: #8D6E63;
+  font-size: 0.875rem;
+}
+
+/* Success Screen */
+.register-success-page {
+  min-height: 100vh;
+  background-color: #F5EBDD;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.register-success-card {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid #E8D8C3;
+  padding: 40px;
+  text-align: center;
+  max-width: 360px;
+  width: 100%;
+}
+
+.register-success-icon {
+  width: 64px;
+  height: 64px;
+  background-color: #dcfce7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.register-success-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #2C1810;
+  margin-bottom: 8px;
+}
+
+.register-success-msg {
+  color: #6D4C41;
+  font-size: 0.875rem;
+}
+
+/* Form */
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.register-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.register-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4E342E;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.register-input {
+  width: 100%;
+  border: 1px solid #E8D8C3;
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #2C1810;
+  background: #ffffff;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.register-input:focus {
+  border-color: #4E342E;
+  box-shadow: 0 0 0 3px rgba(78, 52, 46, 0.1);
+}
+
+.register-input.error {
+  border-color: #f87171;
+  background-color: rgba(254, 242, 242, 0.3);
+}
+
+.register-input.error:focus {
+  border-color: #ef4444;
+}
+
+/* Password wrapper */
+.register-password-wrapper {
+  position: relative;
+}
+
+.register-password-wrapper .register-input {
+  padding-right: 44px;
+}
+
+.register-toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #8D6E63;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+  padding: 0;
+}
+
+.register-toggle-password:hover {
+  color: #4E342E;
+}
+
+/* Password Strength */
+.register-strength-bar-track {
+  height: 6px;
+  background-color: #E8D8C3;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.register-strength-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s ease, background-color 0.5s ease;
+}
+
+.register-strength-label {
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.register-strength-label.weak   { color: #ef4444; }
+.register-strength-label.fair   { color: #f59e0b; }
+.register-strength-label.good   { color: #C8A27E; }
+.register-strength-label.strong { color: #16a34a; }
+
+/* Field messages */
+.register-field-error {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 6px;
+}
+
+.register-field-success {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #16a34a;
+  font-size: 0.75rem;
+  margin-top: 6px;
+}
+
+/* Submit Button */
+.register-submit-btn {
+  width: 100%;
+  background-color: #4E342E;
+  color: #ffffff;
+  padding: 14px;
+  border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(78, 52, 46, 0.25);
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.register-submit-btn:hover:not(:disabled) {
+  background-color: #3E2723;
+  box-shadow: 0 6px 16px rgba(78, 52, 46, 0.3);
+}
+
+.register-submit-btn:disabled {
+  background-color: #8D6E63;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.register-spinner {
+  animation: register-spin 0.8s linear infinite;
+  width: 16px;
+  height: 16px;
+}
+
+.opacity-25 {
+  opacity: 0.25;
+}
+
+.opacity-75 {
+  opacity: 0.75;
+}
+
+@keyframes register-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Divider */
+.register-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.register-divider-line {
+  flex: 1;
+  height: 1px;
+  background-color: #E8D8C3;
+}
+
+.register-divider-text {
+  color: #8D6E63;
+  font-size: 0.75rem;
+  font-family: 'Poppins', sans-serif;
+  white-space: nowrap;
+}
+
+/* Sign In Button */
+.register-login-btn {
+  width: 100%;
+  border: 1px solid #4E342E;
+  color: #4E342E;
+  background: transparent;
+  padding: 14px;
+  border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.register-login-btn:hover {
+  background-color: #F5EBDD;
+}
+
+/* Responsive Design */
+@media (max-width: 500px) {
+  .register-page {
+    padding: 80px 16px 24px;
+  }
+
+  .register-card {
+    padding: 24px;
+  }
+
+  .register-logo-wrapper {
+    width: 144px;
+    height: 144px;
+  }
+
+  .register-title {
+    font-size: 1.375rem;
+  }
+}
