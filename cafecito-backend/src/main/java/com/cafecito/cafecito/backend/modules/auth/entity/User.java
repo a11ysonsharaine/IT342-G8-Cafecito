@@ -1,4 +1,4 @@
-package com.cafecito.cafecito.backend.entity;
+package com.cafecito.cafecito.backend.modules.auth.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -31,13 +31,14 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(length = 100)
+    @Column(name = "full_name", length = 100)
     private String name;
 
     @Column(length = 50)
     private String phoneNumber;
 
-    @Column(name = "photo_bytes", columnDefinition = "bytea", nullable = true)
+    @Column(name = "photo_bytes", nullable = true)
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     private byte[] photoBytes;
 
     @Column(name = "photo_file_name", length = 255, nullable = true)

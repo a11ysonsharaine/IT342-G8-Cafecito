@@ -1,4 +1,4 @@
-package com.cafecito.cafecito.backend.dto;
+package com.cafecito.cafecito.backend.modules.profile.dto;
 
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;

@@ -1,4 +1,4 @@
-package com.cafecito.cafecito.backend.dto;
+package com.cafecito.cafecito.backend.modules.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
