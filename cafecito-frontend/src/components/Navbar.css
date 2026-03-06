@@ -1,0 +1,573 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+/* ═══════════════════════════════════════════════════════════
+   NAVBAR BASE
+   ═══════════════════════════════════════════════════════════ */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  transition: all 0.5s ease;
+}
+
+.navbar-transparent {
+  background: transparent;
+  border-bottom: 1px solid transparent;
+}
+
+.navbar-scrolled {
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LOGO
+   ═══════════════════════════════════════════════════════════ */
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navbar-logo-icon {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.navbar-logo:hover .logo-image {
+  transform: scale(1.05);
+}
+
+.navbar-logo-text {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  transition: color 0.3s ease;
+}
+
+.logo-text-light {
+  color: white;
+}
+
+.logo-text-dark {
+  color: #1C0F0A;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAV LINKS
+   ═══════════════════════════════════════════════════════════ */
+.navbar-links {
+  display: none;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+@media (min-width: 768px) {
+  .navbar-links {
+    display: flex;
+  }
+}
+
+.nav-link {
+  position: relative;
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.nav-link-light {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.nav-link-light:hover {
+  color: white;
+}
+
+.nav-link-dark {
+  color: rgba(78, 52, 46, 0.7);
+}
+
+.nav-link-dark:hover {
+  color: #1C0F0A;
+}
+
+.nav-link-active-light {
+  color: white;
+  font-weight: 700;
+}
+
+.nav-link-active-dark {
+  color: #1C0F0A;
+  font-weight: 700;
+}
+
+.nav-link-underline {
+  position: absolute;
+  bottom: -0.125rem;
+  left: 0;
+  height: 1px;
+  background: #C8A27E;
+  width: 0;
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover .nav-link-underline {
+  width: 100%;
+}
+
+.nav-link-underline-active {
+  width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAVBAR ACTIONS
+   ═══════════════════════════════════════════════════════════ */
+.navbar-actions {
+  display: none;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .navbar-actions {
+    display: flex;
+  }
+}
+
+.navbar-cart {
+  position: relative;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.cart-icon-light {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cart-icon-light:hover {
+  color: white;
+}
+
+.cart-icon-dark {
+  color: rgba(78, 52, 46, 0.6);
+}
+
+.cart-icon-dark:hover {
+  color: #1C0F0A;
+}
+
+.cart-icon-disabled-light {
+  color: rgba(255, 255, 255, 0.25);
+  cursor: not-allowed;
+}
+
+.cart-icon-disabled-dark {
+  color: rgba(78, 52, 46, 0.25);
+  cursor: not-allowed;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -0.125rem;
+  right: -0.125rem;
+  background: #C8A27E;
+  color: #1C0F0A;
+  font-size: 0.625rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+}
+
+.navbar-divider {
+  width: 1px;
+  height: 1.25rem;
+}
+
+.divider-light {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.divider-dark {
+  background: #e5e7eb;
+}
+
+.navbar-login-btn {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.login-btn-light {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.login-btn-light:hover {
+  color: white;
+}
+
+.login-btn-dark {
+  color: rgba(78, 52, 46, 0.7);
+}
+
+.login-btn-dark:hover {
+  color: #1C0F0A;
+}
+
+.navbar-signup-btn {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #1C0F0A;
+  background: #C8A27E;
+  border: none;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-signup-btn:hover {
+  background: #d4ae8a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   USER MENU
+   ═══════════════════════════════════════════════════════════ */
+.navbar-user-menu {
+  position: relative;
+}
+
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.user-avatar {
+  width: 2rem;
+  height: 2rem;
+  background: #C8A27E;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.user-avatar-text {
+  color: #1C0F0A;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.user-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.user-name-light {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.user-menu-trigger:hover .user-name-light {
+  color: white;
+}
+
+.user-name-dark {
+  color: rgba(78, 52, 46, 0.8);
+}
+
+.user-menu-trigger:hover .user-name-dark {
+  color: #1C0F0A;
+}
+
+.user-menu-icon {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.menu-icon-open {
+  transform: rotate(180deg);
+}
+
+.menu-icon-light {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.menu-icon-dark {
+  color: rgba(78, 52, 46, 0.4);
+}
+
+.user-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.75rem);
+  width: 13rem;
+  background: #1C0F0A;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 0;
+  z-index: 50;
+}
+
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dropdown-icon {
+  color: #C8A27E;
+}
+
+.dropdown-divider {
+  margin: 0.25rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dropdown-item-logout {
+  color: #f87171;
+}
+
+.dropdown-item-logout:hover {
+  color: #fca5a5;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE HAMBURGER
+   ═══════════════════════════════════════════════════════════ */
+.navbar-hamburger {
+  display: flex;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  .navbar-hamburger {
+    display: none;
+  }
+}
+
+.hamburger-light {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.hamburger-light:hover {
+  color: white;
+}
+
+.hamburger-dark {
+  color: rgba(78, 52, 46, 0.7);
+}
+
+.hamburger-dark:hover {
+  color: #1C0F0A;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE MENU
+   ═══════════════════════════════════════════════════════════ */
+.mobile-menu {
+  background: rgba(28, 15, 10, 0.98);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.5rem 2rem;
+}
+
+@media (min-width: 768px) {
+  .mobile-menu {
+    display: none;
+  }
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 0;
+  font-family: 'Poppins', sans-serif;
+  color: rgba(255, 255, 255, 0.6);
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.mobile-menu-item:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.mobile-menu-item.font-bold {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  border-left: 3px solid #C8A27E;
+  padding-left: 0.75rem;
+  margin-left: -0.75rem;
+}
+
+.mobile-menu-item-active {
+  color: #1C0F0A !important;
+  font-weight: 600;
+}
+
+.mobile-menu-item-last {
+  border-bottom: none;
+}
+
+.mobile-cart-badge {
+  background: #C8A27E;
+  color: #1C0F0A;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-weight: 700;
+}
+
+.mobile-menu-actions {
+  padding-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobile-login-btn {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  background: none;
+  border-radius: 0.125rem;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mobile-login-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-signup-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: #C8A27E;
+  color: #1C0F0A;
+  border: none;
+  border-radius: 0.75rem;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mobile-signup-btn:hover {
+  background: #d4ae8a;
+}
+
+.mobile-menu-logout {
+  padding-top: 1rem;
+}
+
+.mobile-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.75rem 0;
+  font-family: 'Poppins', sans-serif;
+  color: #f87171;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.mobile-logout-btn:hover {
+  color: #fca5a5;
+}
