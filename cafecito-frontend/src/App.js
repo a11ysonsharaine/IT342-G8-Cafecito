@@ -60,6 +60,10 @@ function App() {
   };
 
   const showDashboard = () => {
+    const userData = TokenUtil.getUserData();
+    if (userData) {
+      setUser(userData);
+    }
     setCurrentPage('dashboard');
     setIsAuthenticated(true);
     window.location.hash = 'dashboard';
