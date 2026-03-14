@@ -288,6 +288,9 @@ function Navbar({
               <button onClick={() => handleNavigation('dashboard')} className="mobile-menu-item">
                 Menu
               </button>
+              <button onClick={() => handleNavigation('profile')} className="mobile-menu-item">
+                Profile
+              </button>
               <button onClick={() => handleNavigation('cart')} className="mobile-menu-item mobile-menu-item-last">
                 <ShoppingCart size={17} /> Cart
                 {cartCount > 0 && <span className="mobile-cart-badge">{cartCount}</span>}

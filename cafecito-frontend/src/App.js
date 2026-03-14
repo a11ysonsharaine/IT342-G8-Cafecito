@@ -5,6 +5,7 @@ import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import ProfilePage from './pages/ProfilePage';
 import { TokenUtil } from './utils/tokenUtil';
 
 function App() {
@@ -18,8 +19,10 @@ function App() {
     // Check if user is already logged in
     if (TokenUtil.isAuthenticated()) {
       setIsAuthenticated(true);
-      setCurrentPage('dashboard');
-      window.location.hash = 'dashboard';
+      const hash = window.location.hash.substring(1);
+      const page = hash === 'profile' ? 'profile' : 'dashboard';
+      setCurrentPage(page);
+      window.location.hash = page;
       
       // Get user data from localStorage
       const userData = TokenUtil.getUserData();
@@ -69,6 +72,11 @@ function App() {
     window.location.hash = 'dashboard';
   };
 
+  const handleUserUpdated = (nextUser) => {
+    setUser(nextUser);
+    TokenUtil.setUserData(nextUser);
+  };
+
   const handleNavigate = (page) => {
     setCurrentPage(page);
     window.location.hash = page;
@@ -114,7 +122,16 @@ function App() {
           <Register onSwitchToLogin={showLoginAfterRegister} />
         )
       ) : (
-        <Dashboard onLogout={handleLogout} />
+        currentPage === 'profile' ? (
+          <ProfilePage
+            isAuthenticated={isAuthenticated}
+            user={user}
+            onNavigate={handleNavigate}
+            onUserUpdated={handleUserUpdated}
+          />
+        ) : (
+          <Dashboard onLogout={handleLogout} />
+        )
       )}
     </div>
   );
