@@ -1,6 +1,6 @@
 package com.cafecito.cafecito.backend.config;
 
-import com.cafecito.cafecito.backend.security.JwtAuthenticationFilter;
+import com.cafecito.cafecito.backend.config.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
