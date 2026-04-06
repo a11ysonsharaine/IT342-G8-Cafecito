@@ -10,32 +10,67 @@ import ProfilePage from './features/profile/ui/ProfilePage';
 import Cart from './features/cart/ui/Cart';
 import CheckoutPage from './features/checkout/ui/CheckoutPage';
 import OrderProcessingPage from './features/orders/ui/OrderProcessingPage';
+import OrderConfirmationPage from './features/orders/ui/OrderConfirmationPage';
+import OrdersPage from './features/orders/ui/OrdersPage';
+import AdminDashboard from './features/admin/ui/AdminDashboard';
 import { TokenUtil } from './core/utils/tokenUtil';
 import { ApiService } from './core/base/apiService';
 import { CartProvider } from './core/contexts/CartContext';
 import { products } from './features/menu/model/products';
 
+const normalizeRole = (role) => (role || '').toString().trim().toLowerCase();
+const pageForRole = (role) => (normalizeRole(role) === 'admin' ? 'admin' : 'dashboard');
+
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [userPhotoUrl, setUserPhotoUrl] = useState('');
   const [cartCount, setCartCount] = useState(0);
   const [registerSuccessMsg, setRegisterSuccessMsg] = useState('');
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [navigationState, setNavigationState] = useState({});
 
+  const isAdmin = normalizeRole(user?.role) === 'admin';
+
   useEffect(() => {
     // Check if user is already logged in
     if (TokenUtil.isAuthenticated()) {
       setIsAuthenticated(true);
-      setCurrentPage('dashboard');
-      window.location.hash = 'dashboard';
+      const initialUserData = TokenUtil.getUserData();
+      const initialPage = pageForRole(initialUserData?.role);
+      setCurrentPage(initialPage);
+      window.location.hash = initialPage;
       
       // Get user data from localStorage
-      const userData = TokenUtil.getUserData();
-      if (userData) {
-        setUser(userData);
-      }
+      if (initialUserData) setUser(initialUserData);
+
+      // Refresh user profile from API to ensure role is up-to-date.
+      (async () => {
+        try {
+          const freshProfile = await ApiService.getProfile();
+          if (freshProfile) {
+            setUser(freshProfile);
+            TokenUtil.setUserData(freshProfile);
+
+            const freshPage = pageForRole(freshProfile?.role);
+            setCurrentPage(freshPage);
+            window.location.hash = freshPage;
+          }
+        } catch (error) {
+          // ignore
+        }
+      })();
+
+      // Load user photo for navbar avatar.
+      (async () => {
+        try {
+          const url = await ApiService.getPhoto();
+          setUserPhotoUrl(url || '');
+        } catch (error) {
+          setUserPhotoUrl('');
+        }
+      })();
       return;
     }
 
@@ -74,12 +109,59 @@ function App() {
     if (userData) {
       setUser(userData);
     }
-    setCurrentPage('dashboard');
+
+    const initialPage = pageForRole(userData?.role);
+    setCurrentPage(initialPage);
     setIsAuthenticated(true);
-    window.location.hash = 'dashboard';
+    window.location.hash = initialPage;
+
+    // Refresh profile after login/navigation so role/name are always up-to-date.
+    (async () => {
+      try {
+        const freshProfile = await ApiService.getProfile();
+        if (freshProfile) {
+          setUser(freshProfile);
+          TokenUtil.setUserData(freshProfile);
+
+          const freshPage = pageForRole(freshProfile?.role);
+          setCurrentPage(freshPage);
+          window.location.hash = freshPage;
+        }
+      } catch (error) {
+        // ignore
+      }
+    })();
+
+    (async () => {
+      try {
+        const url = await ApiService.getPhoto();
+        setUserPhotoUrl(url || '');
+      } catch (error) {
+        setUserPhotoUrl('');
+      }
+    })();
+
+    // currentPage/isAuthenticated/hash already set above
   };
 
   const handleNavigate = (page, state = {}) => {
+    if (isAuthenticated && isAdmin) {
+      const blockedForAdmin = new Set([
+        'cart',
+        'checkout',
+        'order-processing',
+        'order-confirmation',
+        'orders',
+      ]);
+
+      if (blockedForAdmin.has(page)) {
+        setNavigationState({});
+        setCurrentPage('admin');
+        window.location.hash = 'admin';
+        return;
+      }
+    }
+
     setNavigationState(state);
     setCurrentPage(page);
     window.location.hash = page;
@@ -108,6 +190,7 @@ function App() {
     TokenUtil.removeUserData();
     setIsAuthenticated(false);
     setUser(null);
+    setUserPhotoUrl('');
     setCartCount(0);
     setCurrentPage('home');
     window.location.hash = 'home';
@@ -173,8 +256,10 @@ function App() {
   const handleLoadPhoto = async () => {
     try {
       const url = await ApiService.getPhoto();
+      setUserPhotoUrl(url || '');
       return { success: true, url };
     } catch (error) {
+      setUserPhotoUrl('');
       return { success: false, message: error.message || 'Failed to load photo', url: '' };
     }
   };
@@ -182,14 +267,17 @@ function App() {
   return (
     <CartProvider>
       <div className="App">
-        <Navbar
-          isAuthenticated={isAuthenticated}
-          user={user}
-          cartCount={cartCount}
-          currentPage={currentPage}
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
-        />
+        {currentPage !== 'admin' && (
+          <Navbar
+            isAuthenticated={isAuthenticated}
+            user={user}
+            userPhotoUrl={userPhotoUrl}
+            cartCount={cartCount}
+            currentPage={currentPage}
+            onNavigate={handleNavigate}
+            onLogout={handleLogout}
+          />
+        )}
         {!isAuthenticated ? (
           currentPage === 'home' ? (
             <LandingPage 
@@ -210,7 +298,7 @@ function App() {
           <ProfilePage
             isAuthenticated={isAuthenticated}
             user={user}
-            onBack={() => handleNavigate('dashboard')}
+            onBack={() => handleNavigate(isAdmin ? 'admin' : 'dashboard')}
             onUpdateProfile={handleUpdateProfile}
             onChangePassword={handleChangePassword}
             onUploadPhoto={handleUploadPhoto}
@@ -229,10 +317,21 @@ function App() {
             onNavigate={handleNavigate}
           />
         ) : currentPage === 'order-processing' ? (
-          <OrderProcessingPage onNavigate={handleNavigate} />
+          <OrderProcessingPage onNavigate={handleNavigate} isAuthenticated={isAuthenticated} />
+        ) : currentPage === 'order-confirmation' ? (
+          <OrderConfirmationPage onNavigate={handleNavigate} isAuthenticated={isAuthenticated} />
+        ) : currentPage === 'orders' ? (
+          <OrdersPage onNavigate={handleNavigate} isAuthenticated={isAuthenticated} />
+        ) : currentPage === 'admin' ? (
+          <AdminDashboard
+            onNavigate={handleNavigate}
+            isAuthenticated={isAuthenticated}
+            user={user}
+          />
         ) : currentPage === 'product-details' ? (
           <ProductDetailsPage
             isAuthenticated={isAuthenticated}
+            user={user}
             product={selectedProduct}
             onBack={() => handleNavigate('dashboard')}
             onNavigate={handleNavigate}

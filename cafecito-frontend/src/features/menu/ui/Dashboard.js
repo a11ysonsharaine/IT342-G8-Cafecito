@@ -21,7 +21,7 @@ const categories = [
 ];
 
 function Dashboard({ onNavigate, onOpenProduct }) {
-  const [user, setUser] = useState({ name: 'Guest', email: '' });
+  const [user, setUser] = useState({ name: 'Guest', email: '', role: '' });
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
@@ -40,13 +40,17 @@ function Dashboard({ onNavigate, onOpenProduct }) {
       if (profileData) {
         setUser({
           name: profileData.name || 'Guest',
-          email: profileData.email || ''
+          email: profileData.email || '',
+          role: profileData.role || '',
         });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
   };
+
+  const isAdmin = (user.role || '').toString().trim().toLowerCase() === 'admin';
+  const canOrder = !isAdmin;
 
   const addToCart = (product) => {
     const existingItem = cart.find(item => item.id === product.id);
@@ -93,12 +97,14 @@ function Dashboard({ onNavigate, onOpenProduct }) {
               Ready for your perfect cup today? Browse our freshly crafted menu.
             </p>
             <div className="dashboard-banner-actions">
-              <button
-                className="dashboard-banner-btn"
-                onClick={() => onNavigate?.('cart')}
-              >
-                View Cart <ArrowRight size={15} />
-              </button>
+              {canOrder && (
+                <button
+                  className="dashboard-banner-btn"
+                  onClick={() => onNavigate?.('cart')}
+                >
+                  View Cart <ArrowRight size={15} />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -128,7 +134,7 @@ function Dashboard({ onNavigate, onOpenProduct }) {
               <ProductCard
                 key={product.id}
                 product={product}
-                onAddToCart={addToCart}
+                onAddToCart={canOrder ? addToCart : null}
                 onViewProduct={onOpenProduct}
               />
             ))}
@@ -214,7 +220,7 @@ function Dashboard({ onNavigate, onOpenProduct }) {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  onAddToCart={addToCart}
+                  onAddToCart={canOrder ? addToCart : null}
                   onViewProduct={onOpenProduct}
                 />
               ))

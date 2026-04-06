@@ -7,6 +7,7 @@ import logo from '../../../logo.png';
 function Navbar({ 
   isAuthenticated, 
   user, 
+  userPhotoUrl,
   cartCount = 0, 
   currentPage,
   onNavigate,
@@ -23,6 +24,7 @@ function Navbar({
 
   const isLanding = currentPage === 'home';
   const isGuestPage = ['home', 'login', 'register'].includes(currentPage);
+  const isAdmin = (user?.role || '').trim().toLowerCase() === 'admin';
 
   useEffect(() => {
     const onScroll = () => {
@@ -108,7 +110,7 @@ function Navbar({
 
           {/* Logo */}
           <button
-            onClick={() => handleNavigation(isAuthenticated ? 'dashboard' : 'home')}
+            onClick={() => handleNavigation(isAuthenticated ? (isAdmin ? 'admin' : 'dashboard') : 'home')}
             className="navbar-logo"
           >
             <div className="navbar-logo-icon">
@@ -157,6 +159,7 @@ function Navbar({
             ) : (
               <>
                 {navLink('dashboard', 'Menu')}
+                {isAdmin && navLink('admin', 'Admin')}
               </>
             )}
           </div>
@@ -165,17 +168,23 @@ function Navbar({
           <div className="navbar-actions">
             {/* Cart */}
             <button
-              onClick={() => isAuthenticated && handleNavigation('cart')}
+              onClick={() => isAuthenticated && !isAdmin && handleNavigation('cart')}
               className={`navbar-cart ${
-                isAuthenticated
+                isAuthenticated && !isAdmin
                   ? isLanding && !scrolled ? 'cart-icon-light' : 'cart-icon-dark'
                   : isLanding && !scrolled ? 'cart-icon-disabled-light' : 'cart-icon-disabled-dark'
               }`}
-              title={isAuthenticated ? 'Cart' : 'Login to use cart'}
-              disabled={!isAuthenticated}
+              title={
+                !isAuthenticated
+                  ? 'Login to use cart'
+                  : isAdmin
+                    ? "Admins can't use cart"
+                    : 'Cart'
+              }
+              disabled={!isAuthenticated || isAdmin}
             >
               <ShoppingCart size={19} />
-              {isAuthenticated && displayCartCount > 0 && (
+              {isAuthenticated && !isAdmin && displayCartCount > 0 && (
                 <span className="cart-badge">
                   {displayCartCount > 9 ? '9+' : displayCartCount}
                 </span>
@@ -207,9 +216,13 @@ function Navbar({
                   className="user-menu-trigger"
                 >
                   <div className="user-avatar">
-                    <span className="user-avatar-text">
-                      {user?.name?.charAt(0).toUpperCase() || 'U'}
-                    </span>
+                    {userPhotoUrl ? (
+                      <img src={userPhotoUrl} alt="Profile" className="user-avatar-image" />
+                    ) : (
+                      <span className="user-avatar-text">
+                        {user?.name?.charAt(0).toUpperCase() || 'U'}
+                      </span>
+                    )}
                   </div>
                   <span className={`user-name ${isLanding && !scrolled ? 'user-name-light' : 'user-name-dark'}`}>
                     {user?.name?.split(' ')[0] || 'User'}
@@ -227,6 +240,14 @@ function Navbar({
                     >
                       <User size={14} className="dropdown-icon" /> Profile
                     </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => { handleNavigation('admin'); setUserMenuOpen(false); }}
+                        className="dropdown-item"
+                      >
+                        <User size={14} className="dropdown-icon" /> Admin Panel
+                      </button>
+                    )}
                     <div className="dropdown-divider" />
                     <button
                       onClick={handleLogout}
@@ -293,6 +314,11 @@ function Navbar({
               <button onClick={() => handleNavigation('dashboard')} className="mobile-menu-item">
                 Menu
               </button>
+              {isAdmin && (
+                <button onClick={() => handleNavigation('admin')} className="mobile-menu-item">
+                  Admin
+                </button>
+              )}
               <button onClick={() => handleNavigation('cart')} className="mobile-menu-item mobile-menu-item-last">
                 <ShoppingCart size={17} /> Cart
                 {cartCount > 0 && <span className="mobile-cart-badge">{cartCount}</span>}
