@@ -22,12 +22,14 @@ const defaultMilkTypes = ['Whole Milk', 'Oat Milk', 'Soy Milk'];
 
 function ProductDetailsPage({
   isAuthenticated,
+  user,
   product,
   onBack,
   onNavigate,
   onAddToCart,
 }) {
   const { addToCart } = useCart();
+  const isAdmin = ((user?.role) || TokenUtil.getUserData()?.role || '').toString().trim().toLowerCase() === 'admin';
 
   const normalizedProduct = useMemo(() => {
     if (!product) {
@@ -97,6 +99,10 @@ function ProductDetailsPage({
   const currentPrice = (selectedSize?.price ?? normalizedProduct.price) * quantity;
 
   const handleAddToCart = () => {
+    if (isAdmin) {
+      return;
+    }
+
     const cartItem = {
       productId: normalizedProduct.id,
       name: normalizedProduct.name,
@@ -245,26 +251,34 @@ function ProductDetailsPage({
             </div>
 
             <div className="product-actions">
-              <button
-                onClick={handleAddToCart}
-                className={`product-add-to-cart-btn ${addedToCart ? 'added' : ''}`}
-              >
-                {addedToCart ? (
-                  <><Check size={20} /> Added to Cart!</>
-                ) : (
-                  <><ShoppingCart size={20} /> Add to Cart - ₱{currentPrice.toFixed(2)}</>
-                )}
-              </button>
+              {!isAdmin ? (
+                <>
+                  <button
+                    onClick={handleAddToCart}
+                    className={`product-add-to-cart-btn ${addedToCart ? 'added' : ''}`}
+                  >
+                    {addedToCart ? (
+                      <><Check size={20} /> Added to Cart!</>
+                    ) : (
+                      <><ShoppingCart size={20} /> Add to Cart - ₱{currentPrice.toFixed(2)}</>
+                    )}
+                  </button>
 
-              <button
-                onClick={() => {
-                  handleAddToCart();
-                  onNavigate('cart');
-                }}
-                className="product-buy-now-btn"
-              >
-                Buy Now
-              </button>
+                  <button
+                    onClick={() => {
+                      handleAddToCart();
+                      onNavigate('cart');
+                    }}
+                    className="product-buy-now-btn"
+                  >
+                    Buy Now
+                  </button>
+                </>
+              ) : (
+                <div className="product-admin-restriction">
+                  Admin accounts can’t place orders.
+                </div>
+              )}
             </div>
           </section>
         </div>
@@ -275,6 +289,9 @@ function ProductDetailsPage({
 
 ProductDetailsPage.propTypes = {
   isAuthenticated: PropTypes.bool,
+  user: PropTypes.shape({
+    role: PropTypes.string,
+  }),
   onAddToCart: PropTypes.func,
   onBack: PropTypes.func.isRequired,
   onNavigate: PropTypes.func.isRequired,
@@ -298,6 +315,10 @@ ProductDetailsPage.propTypes = {
     sugarLevels: PropTypes.arrayOf(PropTypes.string),
     milkTypes: PropTypes.arrayOf(PropTypes.string),
   }),
+};
+
+ProductDetailsPage.defaultProps = {
+  user: null,
 };
 
 export default ProductDetailsPage;

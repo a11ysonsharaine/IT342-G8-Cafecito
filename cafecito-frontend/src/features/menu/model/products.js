@@ -85,7 +85,7 @@ export const products = [
     name: 'Iced Matcha Latte',
     description: 'Refreshing matcha green tea with cold milk',
     price: 180,
-    image: '/images/menu/ices matcha latte.png',
+    image: '/images/menu/iced matcha latte.png',
     category: 'Iced Coffee',
     featured: false
   }
