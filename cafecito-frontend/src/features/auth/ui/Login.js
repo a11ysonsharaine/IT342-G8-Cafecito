@@ -42,12 +42,24 @@ function Login({ onSwitchToRegister, onSwitchToDashboard, successMessage, onClea
       
       if (response.ok && data.token) {
         console.log('Login successful!');
+
+        // Fallback snapshot from login response (role-based routing).
+        if (data?.email) {
+          const normalizedRole = (data?.role || '').toString().trim().toLowerCase() || 'customer';
+          TokenUtil.setUserData({
+            id: data?.id,
+            email: data?.email,
+            name: data?.name ?? null,
+            role: normalizedRole,
+          });
+        }
         
         // Fetch and store user profile
         try {
           const userProfile = await ApiService.getProfile();
           if (userProfile) {
-            TokenUtil.setUserData(userProfile);
+            const normalizedRole = (userProfile?.role || '').toString().trim().toLowerCase() || undefined;
+            TokenUtil.setUserData(normalizedRole ? { ...userProfile, role: normalizedRole } : userProfile);
           }
         } catch (profileError) {
           console.error('Failed to fetch user profile:', profileError);

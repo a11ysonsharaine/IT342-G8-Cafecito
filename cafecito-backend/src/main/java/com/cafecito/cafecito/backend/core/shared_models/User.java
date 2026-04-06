@@ -31,6 +31,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(length = 20)
+    private String role;
+
     @Column(name = "full_name", length = 100)
     private String name;
 

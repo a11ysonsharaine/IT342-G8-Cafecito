@@ -15,6 +15,7 @@ public class ProfileResponse {
     private String email;
     private String name;
     private String phoneNumber;
+    private String role;
     private boolean hasPhoto;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

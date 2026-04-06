@@ -28,22 +28,24 @@ public class AuthService {
     private JwtUtil jwtUtil;
 
     public User findByEmail(String email) {
-        return userRepository.findByEmail(email).orElse(null);
+        if (email == null) return null;
+        return userRepository.findByEmailIgnoreCase(email).orElse(null);
     }
 
     @Transactional
     public ApiResponse registerUser(RegisterRequest request) {
         try {
             // Check if email already exists
-            if (userRepository.existsByEmail(request.getEmail())) {
+            if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
                 return new ApiResponse(false, "Email already registered");
             }
 
             User user = new User();
-            user.setEmail(request.getEmail());
+            user.setEmail(request.getEmail() == null ? null : request.getEmail().trim().toLowerCase());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setName(request.getName());
             user.setPhoneNumber(request.getPhoneNumber());
+            user.setRole("customer");
 
             User savedUser = userRepository.save(user);
 
@@ -72,6 +74,12 @@ public class AuthService {
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new TokenResponse(token, "Login successful");
+
+        TokenResponse response = new TokenResponse(token, "Login successful");
+        response.setId(user.getId());
+        response.setEmail(user.getEmail());
+        response.setName(user.getName());
+        response.setRole(user.getRole() == null ? "customer" : user.getRole().trim().toLowerCase());
+        return response;
     }
 }

@@ -1,82 +1,73 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Clock3, CheckCircle2 } from 'lucide-react';
+import { Coffee } from 'lucide-react';
 import { useCart } from '../../../core/contexts/CartContext';
 import './OrderProcessingPage.css';
 
-function OrderProcessingPage({ onNavigate }) {
+function OrderProcessingPage({ onNavigate, isAuthenticated }) {
   const { currentOrder, lastOrder } = useCart();
   const activeOrder = currentOrder || lastOrder;
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      onNavigate('home');
+      return;
+    }
+
+    if (!activeOrder) {
+      onNavigate('cart');
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      onNavigate('order-confirmation');
+    }, 2800);
+
+    return () => clearTimeout(timer);
+  }, [activeOrder, isAuthenticated, onNavigate]);
+
   if (!activeOrder) {
-    return (
-      <div className="order-page">
-        <div className="order-card">
-          <h1 className="order-title">No Active Order</h1>
-          <p className="order-subtitle">Place an order first to see processing status.</p>
-          <button className="order-btn" type="button" onClick={() => onNavigate('dashboard')}>
-            Go to Menu
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
     <div className="order-page">
-      <div className="order-card">
-        <div className="order-status-icon">
-          <Clock3 size={40} />
+      <div className="order-processing-shell">
+        <div className="order-processing-icon-wrap">
+          <div className="order-processing-icon">
+            <Coffee size={40} className="order-processing-coffee" />
+          </div>
+          <div className="order-processing-ripple order-processing-ripple-one" />
+          <div className="order-processing-ripple order-processing-ripple-two" />
         </div>
-        <h1 className="order-title">Order is Being Processed</h1>
-        <p className="order-subtitle">Your order has been received and is now in the queue.</p>
+        <h2 className="order-processing-title">Processing Your Order</h2>
+        <p className="order-processing-subtitle">
+          Our baristas are getting ready to craft your perfect order. Just a moment...
+        </p>
 
-        <div className="order-details">
-          <div className="order-row">
-            <span>Order ID</span>
-            <span>{activeOrder.id}</span>
-          </div>
-          <div className="order-row">
-            <span>Order Number</span>
-            <span>{activeOrder.orderNumber || 'N/A'}</span>
-          </div>
-          <div className="order-row">
-            <span>Date</span>
-            <span>{activeOrder.date || 'N/A'}</span>
-          </div>
-          <div className="order-row">
-            <span>Items</span>
-            <span>{activeOrder.items.length}</span>
-          </div>
-          <div className="order-row">
-            <span>Fulfillment</span>
-            <span>{activeOrder.fulfillment}</span>
-          </div>
-          <div className="order-row">
-            <span>Status</span>
-            <span>{activeOrder.status}</span>
-          </div>
-          <div className="order-row order-row-total">
-            <span>Total Paid</span>
-            <span>₱{activeOrder.total.toFixed(2)}</span>
-          </div>
+        <div className="order-processing-progress-track">
+          <div className="order-processing-progress-fill" />
         </div>
 
-        <div className="order-success">
-          <CheckCircle2 size={18} />
-          <span>We sent confirmation details to your contact information.</span>
+        <div className="order-processing-spinner-row">
+          <svg className="order-processing-spinner" viewBox="0 0 24 24" fill="none">
+            <circle className="order-processing-spinner-fade" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="order-processing-spinner-solid" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Confirming with our kitchen...
         </div>
-
-        <button className="order-btn" type="button" onClick={() => onNavigate('dashboard')}>
-          Back to Menu
-        </button>
       </div>
     </div>
   );
 }
 
 OrderProcessingPage.propTypes = {
+  isAuthenticated: PropTypes.bool,
   onNavigate: PropTypes.func.isRequired,
+};
+
+OrderProcessingPage.defaultProps = {
+  isAuthenticated: false,
 };
 
 export default OrderProcessingPage;

@@ -1,13 +1,26 @@
-import React, { createContext, useState, useCallback } from 'react';
+import React, { createContext, useState, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 /**
  * Cart Item structure with deduplication support
  */
 export const CartContext = createContext();
+const CART_STORAGE_KEY = 'cafecito_cart_items_v1';
 
 export function CartProvider({ children }) {
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const raw = localStorage.getItem(CART_STORAGE_KEY);
+      if (!raw) {
+        return [];
+      }
+
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  });
   const [currentOrder, setCurrentOrder] = useState(null);
   const [orders, setOrders] = useState([]);
   const [lastOrder, setLastOrder] = useState(null);
@@ -71,6 +84,10 @@ export function CartProvider({ children }) {
   const clearCart = useCallback(() => {
     setCartItems([]);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+  }, [cartItems]);
 
   /**
    * Place order and persist a lightweight order snapshot for the processing page

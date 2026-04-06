@@ -6,6 +6,132 @@
   padding: 24px;
 }
 
+.order-processing-shell {
+  text-align: center;
+  max-width: 360px;
+}
+
+.order-processing-icon-wrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 24px;
+}
+
+.order-processing-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  background: #4e342e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 2;
+}
+
+.order-processing-coffee {
+  color: #c8a27e;
+}
+
+.order-processing-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 4px solid rgba(78, 52, 46, 0.3);
+  animation: orderPing 1.5s infinite;
+}
+
+.order-processing-ripple-two {
+  border-color: rgba(78, 52, 46, 0.2);
+  animation-delay: 0.5s;
+}
+
+.order-processing-title {
+  margin: 0 0 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2c1810;
+}
+
+.order-processing-subtitle {
+  color: #6d4c41;
+  margin: 0 auto 24px;
+}
+
+.order-processing-progress-track {
+  width: 256px;
+  max-width: 100%;
+  margin: 0 auto 16px;
+  height: 8px;
+  border-radius: 999px;
+  background: #e8d8c3;
+  overflow: hidden;
+}
+
+.order-processing-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: #4e342e;
+  animation: progressAnim 2.8s ease-in-out forwards;
+}
+
+.order-processing-spinner-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #8d6e63;
+  font-size: 0.875rem;
+}
+
+.order-processing-spinner {
+  width: 16px;
+  height: 16px;
+  color: #4e342e;
+  animation: spin 0.8s linear infinite;
+}
+
+.order-processing-spinner-fade {
+  opacity: 0.25;
+}
+
+.order-processing-spinner-solid {
+  opacity: 0.75;
+}
+
+@keyframes orderPing {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes progressAnim {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .order-card {
   width: 100%;
   max-width: 560px;
