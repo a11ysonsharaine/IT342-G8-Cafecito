@@ -1,6 +1,19 @@
 import { API_ENDPOINTS } from '../constants/constants';
 import { TokenUtil } from '../utils/tokenUtil';
 
+const parseJsonSafe = async (response) => {
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    return null;
+  }
+};
+
 /**
  * API utility for making HTTP requests
  */
@@ -17,7 +30,7 @@ export const ApiService = {
       body: JSON.stringify({ email, password }),
     });
     
-    const data = await response.json();
+    const data = (await parseJsonSafe(response)) || {};
     
     if (response.ok && data.token) {
       TokenUtil.setToken(data.token);
@@ -38,7 +51,7 @@ export const ApiService = {
       body: JSON.stringify(userData),
     });
     
-    return { response, data: await response.json() };
+    return { response, data: (await parseJsonSafe(response)) || {} };
   },
 
   /**
@@ -50,9 +63,16 @@ export const ApiService = {
     });
 
     if (response.ok) {
-      const data = await response.json();
+      const data = (await parseJsonSafe(response)) || {};
+      if (!(data.success && data.data)) {
+        // Helpful when backend returns an unexpected shape
+        console.warn('getProfile: unexpected payload', data);
+      }
       return data.success && data.data ? data.data : null;
     }
+
+    const errorPayload = (await parseJsonSafe(response)) || {};
+    console.warn('getProfile failed', response.status, errorPayload);
 
     return null;
   },
@@ -70,7 +90,7 @@ export const ApiService = {
       body: JSON.stringify(profileData),
     });
 
-    return { response, data: await response.json() };
+    return { response, data: (await parseJsonSafe(response)) || {} };
   },
 
   /**
@@ -86,7 +106,7 @@ export const ApiService = {
       body: JSON.stringify(payload),
     });
 
-    return { response, data: await response.json() };
+    return { response, data: (await parseJsonSafe(response)) || {} };
   },
 
   /**
@@ -105,7 +125,20 @@ export const ApiService = {
       body: formData,
     });
 
-    return await response.json();
+    const data = (await parseJsonSafe(response)) || {};
+    if (!response.ok) {
+      const fallbackMessage = response.status === 403
+        ? 'Upload forbidden (403). Please log in again and retry.'
+        : `Upload failed (${response.status})`;
+
+      return {
+        success: false,
+        status: response.status,
+        message: data?.message || fallbackMessage,
+      };
+    }
+
+    return data;
   },
 
   /**

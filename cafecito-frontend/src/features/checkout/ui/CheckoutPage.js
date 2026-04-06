@@ -1,8 +1,27 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Lock, ArrowLeft } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Banknote,
+  CreditCard,
+  Lock,
+  MapPin,
+  ShoppingBag,
+  Smartphone,
+} from 'lucide-react';
 import { useCart } from '../../../core/contexts/CartContext';
 import './CheckoutPage.css';
+
+function SummaryImage({ src, alt }) {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return <div className="checkout-item-image-fallback">☕</div>;
+  }
+
+  return <img src={src} alt={alt} className="checkout-item-image" onError={() => setFailed(true)} />;
+}
 
 function CheckoutPage({ onNavigate, isAuthenticated, user, discount }) {
   const { cartItems, cartTotal, placeOrder } = useCart();
@@ -46,6 +65,15 @@ function CheckoutPage({ onNavigate, isAuthenticated, user, discount }) {
 
   const isFormValid = () => Object.keys(validate()).length === 0;
 
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -68,140 +96,286 @@ function CheckoutPage({ onNavigate, isAuthenticated, user, discount }) {
     onNavigate('order-processing');
   };
 
+  const paymentOptions = [
+    {
+      value: 'card',
+      label: 'Credit/Debit Card',
+      description: 'Visa, Mastercard, JCB',
+      icon: CreditCard,
+    },
+    {
+      value: 'gcash',
+      label: 'GCash',
+      description: 'Pay via GCash wallet',
+      icon: Smartphone,
+    },
+    {
+      value: 'cash-on-delivery',
+      label: 'Cash on Delivery',
+      description: 'Pay when you receive',
+      icon: Banknote,
+    },
+  ];
+
   return (
     <div className="checkout-page">
-      <div className="checkout-wrapper">
+      <div className="checkout-wrapper checkout-page-wrapper">
         <button className="checkout-back" type="button" onClick={() => onNavigate('cart')}>
           <ArrowLeft size={16} /> Back to Cart
         </button>
 
         <h1 className="checkout-title">Checkout</h1>
+        <p className="checkout-subtitle">Complete your order details below</p>
 
-        <div className="checkout-grid">
-          <form className="checkout-form" onSubmit={handleSubmit}>
-            <h2 className="checkout-section-title">Shipping Information</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="checkout-grid">
+            <div className="checkout-form-column">
+              <section className="checkout-card">
+                <h2 className="checkout-section-title"><span className="checkout-step-badge">1</span>{' '}<span>How would you like to receive your order?</span></h2>
 
-            <label className="checkout-label" htmlFor="fullName">Full Name</label>
-            <input
-              id="fullName"
-              className="checkout-input"
-              value={form.fullName}
-              onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
-            />
-            {errors.fullName && <p className="checkout-error">{errors.fullName}</p>}
+                <div className="checkout-fulfillment-grid">
+                  <button
+                    type="button"
+                    className={`checkout-fulfillment-option ${fulfillment === 'delivery' ? 'active' : ''}`}
+                    onClick={() => setFulfillment('delivery')}
+                  >
+                    <span className="checkout-fulfillment-icon"><MapPin size={22} /></span>
+                    <span className="checkout-fulfillment-title">Delivery</span>
+                    <span className="checkout-fulfillment-copy">Delivered to your door</span>
+                    <span className="checkout-radio-shell">
+                      {fulfillment === 'delivery' && <span className="checkout-radio-dot" />}
+                    </span>
+                  </button>
 
-            <label className="checkout-label" htmlFor="email">Email</label>
-            <input
-              id="email"
-              className="checkout-input"
-              value={form.email}
-              onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-            />
-            {errors.email && <p className="checkout-error">{errors.email}</p>}
+                  <button
+                    type="button"
+                    className={`checkout-fulfillment-option ${fulfillment === 'pickup' ? 'active' : ''}`}
+                    onClick={() => setFulfillment('pickup')}
+                  >
+                    <span className="checkout-fulfillment-icon"><ShoppingBag size={22} /></span>
+                    <span className="checkout-fulfillment-title">Pick Up</span>
+                    <span className="checkout-fulfillment-copy">Collect at our store</span>
+                    <span className="checkout-radio-shell">
+                      {fulfillment === 'pickup' && <span className="checkout-radio-dot" />}
+                    </span>
+                  </button>
+                </div>
 
-            <label className="checkout-label" htmlFor="phone">Phone</label>
-            <input
-              id="phone"
-              className="checkout-input"
-              value={form.phone}
-              onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-            />
-            {errors.phone && <p className="checkout-error">{errors.phone}</p>}
+                {fulfillment === 'pickup' && (
+                  <div className="checkout-pickup-note">
+                    <MapPin size={15} />
+                    <div>
+                      <p className="checkout-pickup-note-title">Cafecito Store</p>
+                      <p className="checkout-pickup-note-copy">123 Street, Basak Cebu, City - Open 7AM-9PM</p>
+                    </div>
+                  </div>
+                )}
+              </section>
 
-            <div className="checkout-row">
+              <section className="checkout-card">
+                <h2 className="checkout-section-title">
+                  <span className="checkout-step-badge">2</span>
+                  {fulfillment === 'delivery' ? 'Shipping Information' : 'Contact Information'}
+                </h2>
+
+                <div className="checkout-fields-grid">
+                  <div>
+                    <label className="checkout-label" htmlFor="fullName">
+                      Full Name <span className="checkout-required">*</span>
+                    </label>
+                    <input
+                      id="fullName"
+                      className={`checkout-input ${errors.fullName ? 'checkout-input-error' : ''}`}
+                      value={form.fullName}
+                      onChange={(e) => handleChange('fullName', e.target.value)}
+                      placeholder="Maria Santos"
+                    />
+                    {errors.fullName && (
+                      <p className="checkout-error">
+                        <AlertCircle size={11} /> {errors.fullName}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="checkout-label" htmlFor="email">
+                      Email Address <span className="checkout-required">*</span>
+                    </label>
+                    <input
+                      id="email"
+                      className={`checkout-input ${errors.email ? 'checkout-input-error' : ''}`}
+                      value={form.email}
+                      onChange={(e) => handleChange('email', e.target.value)}
+                      placeholder="you@example.com"
+                    />
+                    {errors.email && (
+                      <p className="checkout-error">
+                        <AlertCircle size={11} /> {errors.email}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="checkout-label" htmlFor="phone">
+                      Phone Number <span className="checkout-required">*</span>
+                    </label>
+                    <input
+                      id="phone"
+                      className={`checkout-input ${errors.phone ? 'checkout-input-error' : ''}`}
+                      value={form.phone}
+                      onChange={(e) => handleChange('phone', e.target.value)}
+                      placeholder="+63 9XX XXX XXXX"
+                    />
+                    {errors.phone && (
+                      <p className="checkout-error">
+                        <AlertCircle size={11} /> {errors.phone}
+                      </p>
+                    )}
+                  </div>
+
+                  {fulfillment === 'delivery' && (
+                    <div className="checkout-field-full">
+                      <label className="checkout-label" htmlFor="address">
+                        Delivery Address <span className="checkout-required">*</span>
+                      </label>
+                      <input
+                        id="address"
+                        className={`checkout-input ${errors.address ? 'checkout-input-error' : ''}`}
+                        value={form.address}
+                        onChange={(e) => handleChange('address', e.target.value)}
+                        placeholder="123 Street, Barangay, City, Province"
+                      />
+                      {errors.address && (
+                        <p className="checkout-error">
+                          <AlertCircle size={11} /> {errors.address}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="checkout-field-full">
+                    <label className="checkout-label" htmlFor="notes">
+                      Notes <span className="checkout-muted">(optional)</span>
+                    </label>
+                    <textarea
+                      id="notes"
+                      className="checkout-input checkout-textarea"
+                      value={form.notes}
+                      onChange={(e) => handleChange('notes', e.target.value)}
+                      placeholder={
+                        fulfillment === 'delivery'
+                          ? 'Special delivery instructions, gate code, etc.'
+                          : 'Any special requests for your order?'
+                      }
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section className="checkout-card">
+                <h2 className="checkout-section-title"><span className="checkout-step-badge">3</span>{' '}<span>Payment Method</span></h2>
+
+                <div className="checkout-payment-list">
+                  {paymentOptions.map((option) => {
+                    const Icon = option.icon;
+                    const active = paymentMethod === option.value;
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`checkout-payment-option ${active ? 'active' : ''}`}
+                        onClick={() => setPaymentMethod(option.value)}
+                      >
+                        <span className="checkout-payment-icon"><Icon size={20} /></span>
+                        <span className="checkout-payment-content">
+                          <span className="checkout-payment-title">{option.label}</span>
+                          <span className="checkout-payment-copy">{option.description}</span>
+                        </span>
+                        <span className="checkout-radio-shell">{active && <span className="checkout-radio-dot" />}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+
+            <aside className="checkout-summary sticky">
+              <h2 className="checkout-section-title"><span className="checkout-step-badge">4</span>{' '}<span>Order Summary</span></h2>
+
+              <div className="checkout-items-list">
+                {cartItems.map((item) => (
+                  <div key={item.cartId} className="checkout-item-row">
+                    <div className="checkout-item-image-wrap">
+                      <SummaryImage src={item.image} alt={item.name} />
+                    </div>
+                    <div className="checkout-item-content">
+                      <p className="checkout-item-name">{item.name}</p>
+                      <p className="checkout-item-meta">{item.size} x {item.quantity}</p>
+                    </div>
+                    <p className="checkout-item-price">₱{(item.price * item.quantity).toFixed(2)}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="checkout-summary-breakdown">
+                <div className="checkout-summary-row">
+                  <span>Subtotal</span>
+                  <span>₱{cartTotal.toFixed(2)}</span>
+                </div>
+                <div className="checkout-summary-row">
+                  <span>{fulfillment === 'delivery' ? 'Delivery Fee' : 'Pick Up'}</span>
+                  <span className={fulfillment === 'pickup' ? 'checkout-free' : ''}>
+                    {fulfillment === 'pickup' ? 'FREE' : `₱${deliveryFee.toFixed(2)}`}
+                  </span>
+                </div>
+                {Number(discount) > 0 && (
+                  <div className="checkout-summary-row checkout-discount-row">
+                    <span>Discount</span>
+                    <span>-₱{Number(discount).toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="checkout-summary-total">
+                <span>Total</span>
+                <span>₱{finalTotal.toFixed(2)}</span>
+              </div>
+
               <button
-                type="button"
-                className={`checkout-chip ${fulfillment === 'delivery' ? 'active' : ''}`}
-                onClick={() => setFulfillment('delivery')}
+                type="submit"
+                disabled={!isFormValid() || loading}
+                className="checkout-submit"
               >
-                Delivery
+                <Lock size={16} />
+                {loading ? 'Processing...' : 'Place Order'}
               </button>
-              <button
-                type="button"
-                className={`checkout-chip ${fulfillment === 'pickup' ? 'active' : ''}`}
-                onClick={() => setFulfillment('pickup')}
-              >
-                Pickup
-              </button>
-            </div>
 
-            {fulfillment === 'delivery' && (
-              <>
-                <label className="checkout-label" htmlFor="address">Address</label>
-                <textarea
-                  id="address"
-                  className="checkout-input checkout-textarea"
-                  value={form.address}
-                  onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
-                />
-                {errors.address && <p className="checkout-error">{errors.address}</p>}
-              </>
-            )}
+              <p className="checkout-secure-note">
+                <Lock size={11} /> Your information is secure
+              </p>
 
-            <label className="checkout-label" htmlFor="notes">Order Notes (Optional)</label>
-            <textarea
-              id="notes"
-              className="checkout-input checkout-textarea"
-              value={form.notes}
-              onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
-            />
-
-            <h2 className="checkout-section-title">Payment Method</h2>
-            <div className="checkout-row">
-              <button
-                type="button"
-                className={`checkout-chip ${paymentMethod === 'cash-on-delivery' ? 'active' : ''}`}
-                onClick={() => setPaymentMethod('cash-on-delivery')}
-              >
-                Cash on Delivery
-              </button>
-              <button
-                type="button"
-                className={`checkout-chip ${paymentMethod === 'gcash' ? 'active' : ''}`}
-                onClick={() => setPaymentMethod('gcash')}
-              >
-                GCash
-              </button>
-            </div>
-
-            <button
-              type="submit"
-              disabled={!isFormValid() || loading}
-              className="checkout-submit"
-            >
-              <Lock size={16} />
-              {loading ? 'Processing...' : 'Place Order'}
-            </button>
-
-            {submitted && !loading && (
-              <p className="checkout-note">Order submitted. Redirecting to processing page...</p>
-            )}
-          </form>
-
-          <aside className="checkout-summary">
-            <h2 className="checkout-section-title">Order Summary</h2>
-            <div className="checkout-summary-row">
-              <span>Subtotal</span>
-              <span>₱{cartTotal.toFixed(2)}</span>
-            </div>
-            <div className="checkout-summary-row">
-              <span>Discount</span>
-              <span>{discount > 0 ? `-₱${Number(discount).toFixed(2)}` : '₱0.00'}</span>
-            </div>
-            <div className="checkout-summary-row">
-              <span>{fulfillment === 'delivery' ? 'Delivery Fee' : 'Pickup Fee'}</span>
-              <span>₱{deliveryFee.toFixed(2)}</span>
-            </div>
-            <div className="checkout-summary-total">
-              <span>Total</span>
-              <span>₱{finalTotal.toFixed(2)}</span>
-            </div>
-          </aside>
-        </div>
+              {submitted && !loading && (
+                <p className="checkout-note">Order submitted. Redirecting to processing page...</p>
+              )}
+            </aside>
+          </div>
+        </form>
       </div>
     </div>
   );
 }
+
+SummaryImage.propTypes = {
+  alt: PropTypes.string,
+  src: PropTypes.string,
+};
+
+SummaryImage.defaultProps = {
+  alt: 'Product image',
+  src: '',
+};
 
 CheckoutPage.propTypes = {
   onNavigate: PropTypes.func.isRequired,

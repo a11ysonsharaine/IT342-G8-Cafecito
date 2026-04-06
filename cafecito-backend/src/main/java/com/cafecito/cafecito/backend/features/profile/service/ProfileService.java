@@ -31,8 +31,15 @@ public class ProfileService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    private static String normalizeRole(String role) {
+        if (role == null) return "customer";
+        String normalized = role.trim().toLowerCase();
+        return normalized.isBlank() ? "customer" : normalized;
+    }
+
     public User findByEmail(String email) {
-        return userRepository.findByEmail(email).orElse(null);
+        if (email == null) return null;
+        return userRepository.findByEmailIgnoreCase(email).orElse(null);
     }
 
     public ProfileResponse getProfileResponse(String email) {
@@ -47,6 +54,7 @@ public class ProfileService {
         response.setEmail(user.getEmail());
         response.setName(user.getName());
         response.setPhoneNumber(user.getPhoneNumber());
+        response.setRole(normalizeRole(user.getRole()));
         response.setHasPhoto(user.getPhotoBytes() != null);
         response.setCreatedAt(user.getCreatedAt());
         response.setUpdatedAt(user.getUpdatedAt());
@@ -76,6 +84,7 @@ public class ProfileService {
         profileResponse.setEmail(saved.getEmail());
         profileResponse.setName(saved.getName());
         profileResponse.setPhoneNumber(saved.getPhoneNumber());
+        profileResponse.setRole(normalizeRole(saved.getRole()));
         profileResponse.setHasPhoto(saved.getPhotoBytes() != null);
         profileResponse.setCreatedAt(saved.getCreatedAt());
         profileResponse.setUpdatedAt(saved.getUpdatedAt());
@@ -103,6 +112,7 @@ public class ProfileService {
         profileResponse.setEmail(saved.getEmail());
         profileResponse.setName(saved.getName());
         profileResponse.setPhoneNumber(saved.getPhoneNumber());
+        profileResponse.setRole(normalizeRole(saved.getRole()));
         profileResponse.setHasPhoto(saved.getPhotoBytes() != null);
         profileResponse.setCreatedAt(saved.getCreatedAt());
         profileResponse.setUpdatedAt(saved.getUpdatedAt());
