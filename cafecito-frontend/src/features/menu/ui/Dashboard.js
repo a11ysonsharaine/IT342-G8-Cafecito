@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import './Dashboard.css';
 import { TokenUtil } from '../../../core/utils/tokenUtil';
 import { ApiService } from '../../../core/base/apiService';
-import { products } from '../model/products';
 import { ProductCard } from './ProductCard';
 
 const BANNER_IMG = 'https://images.unsplash.com/photo-1707500315925-910ab09b92b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1920&q=80';
@@ -25,6 +24,7 @@ function Dashboard({ onNavigate, onOpenProduct }) {
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
+  const [menuProducts, setMenuProducts] = useState([]);
 
   useEffect(() => {
     if (!TokenUtil.isAuthenticated()) {
@@ -32,7 +32,34 @@ function Dashboard({ onNavigate, onOpenProduct }) {
       return;
     }
     fetchUserProfile();
+    fetchMenu();
   }, []);
+
+  const fetchMenu = async () => {
+    try {
+      const { response, data } = await ApiService.getMenuProducts();
+      if (!response.ok) {
+        console.warn('getMenuProducts failed', response.status, data);
+        return;
+      }
+
+      const mapped = Array.isArray(data)
+        ? data.map((p) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description || '',
+          price: Number(p.priceCents || 0),
+          image: p.imageUrl || '',
+          category: p.categoryName || 'Other',
+          featured: Boolean(p.featured),
+        }))
+        : [];
+
+      setMenuProducts(mapped);
+    } catch (error) {
+      console.error('Error fetching menu:', error);
+    }
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -66,15 +93,15 @@ function Dashboard({ onNavigate, onOpenProduct }) {
   };
 
   const filteredProducts = activeCategory === 'All'
-    ? products
-    : products.filter(p => p.category === activeCategory);
+    ? menuProducts
+    : menuProducts.filter(p => p.category === activeCategory);
 
   const searchFilteredProducts = filteredProducts.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const featuredProducts = products.filter(p => p.featured);
+  const featuredProducts = menuProducts.filter(p => p.featured);
 
   const firstName = (user.name || 'Guest').split(' ')[0];
 
@@ -187,7 +214,7 @@ function Dashboard({ onNavigate, onOpenProduct }) {
           {activeCategory === 'All' && (
             <div className="dashboard-category-cards">
               {['Hot Coffee', 'Iced Coffee'].map(cat => {
-                const catProducts = products.filter(p => p.category === cat);
+                const catProducts = menuProducts.filter(p => p.category === cat);
                 const catImage = catProducts[0]?.image;
                 return (
                   <button

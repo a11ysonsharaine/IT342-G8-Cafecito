@@ -20,6 +20,13 @@ export const TokenUtil = {
     } else {
       localStorage.setItem(TOKEN_KEY, token);
     }
+
+    // Notify the app that authentication state changed.
+    try {
+      window.dispatchEvent(new Event('cafecito:auth-token-changed'));
+    } catch (e) {
+      // ignore
+    }
   },
 
   /**
@@ -28,6 +35,13 @@ export const TokenUtil = {
   removeToken: () => {
     localStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(TOKEN_KEY);
+
+    // Notify the app that authentication state changed.
+    try {
+      window.dispatchEvent(new Event('cafecito:auth-token-changed'));
+    } catch (e) {
+      // ignore
+    }
   },
 
   /**

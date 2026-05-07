@@ -20,7 +20,7 @@ export function ProductCard({ product, onAddToCart, onViewProduct }) {
 
   const handleViewDetails = () => {
     if (onViewProduct) {
-      onViewProduct(product.id);
+      onViewProduct(product);
     }
   };
 

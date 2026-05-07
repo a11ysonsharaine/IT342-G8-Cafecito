@@ -189,6 +189,7 @@ function OrderConfirmationPage({ onNavigate, isAuthenticated }) {
               )}
             </div>
           </div>
+
         </div>
 
         <div className="order-confirmation-actions">

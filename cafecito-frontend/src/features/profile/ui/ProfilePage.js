@@ -212,11 +212,16 @@ export default function ProfilePage({
 
   return (
     <div className="profile-page">
+      <button
+        onClick={onBack}
+        className="profile-back-button profile-back-floating"
+        type="button"
+        aria-label="Back"
+        title="Back"
+      >
+        <ArrowLeft size={22} />
+      </button>
       <div className="profile-shell">
-        <button onClick={onBack} className="profile-back-button" type="button">
-          <ArrowLeft size={16} /> Back to Dashboard
-        </button>
-
         <h1 className="profile-title">My Profile</h1>
 
         {(saved || pwdSaved || photoSaved) && (

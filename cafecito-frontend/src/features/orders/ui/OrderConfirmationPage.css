@@ -252,6 +252,51 @@
   grid-template-columns: 1fr;
 }
 
+.order-confirmation-qr-card {
+  border-top: 1px solid #e8d8c3;
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+  background: linear-gradient(180deg, #fffaf5 0%, #f9f2e8 100%);
+}
+
+.order-confirmation-qr-copy {
+  text-align: center;
+}
+
+.order-confirmation-qr-label {
+  margin: 0 0 6px;
+  color: #8d6e63;
+  font-size: 0.75rem;
+  font-family: 'Poppins', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.order-confirmation-qr-title {
+  margin: 0 0 8px;
+  color: #2c1810;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.order-confirmation-qr-text {
+  margin: 0;
+  color: #6d4c41;
+  font-size: 0.875rem;
+}
+
+.order-confirmation-qr-wrap {
+  padding: 14px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid #e8d8c3;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
 .order-confirmation-info-cell {
   padding: 14px 24px;
   border-top: 1px solid #e8d8c3;
@@ -342,6 +387,17 @@
 
   .order-confirmation-info-cell:first-child {
     border-left: 0;
+  }
+
+  .order-confirmation-qr-card {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .order-confirmation-qr-copy {
+    text-align: left;
+    max-width: 320px;
   }
 
   .order-confirmation-actions {

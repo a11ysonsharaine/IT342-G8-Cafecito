@@ -16,7 +16,6 @@ import AdminDashboard from './features/admin/ui/AdminDashboard';
 import { TokenUtil } from './core/utils/tokenUtil';
 import { ApiService } from './core/base/apiService';
 import { CartProvider } from './core/contexts/CartContext';
-import { products } from './features/menu/model/products';
 
 const normalizeRole = (role) => (role || '').toString().trim().toLowerCase();
 const pageForRole = (role) => (normalizeRole(role) === 'admin' ? 'admin' : 'dashboard');
@@ -28,7 +27,7 @@ function App() {
   const [userPhotoUrl, setUserPhotoUrl] = useState('');
   const [cartCount, setCartCount] = useState(0);
   const [registerSuccessMsg, setRegisterSuccessMsg] = useState('');
-  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [navigationState, setNavigationState] = useState({});
 
   const isAdmin = normalizeRole(user?.role) === 'admin';
@@ -84,6 +83,32 @@ function App() {
       setCurrentPage('home');
       window.location.hash = 'home';
     }
+  }, []);
+
+  useEffect(() => {
+    const syncAuthFromStorage = () => {
+      const authed = TokenUtil.isAuthenticated();
+      setIsAuthenticated(authed);
+      if (!authed) {
+        setUser(null);
+        setUserPhotoUrl('');
+        setCartCount(0);
+        setSelectedProduct(null);
+        setCurrentPage('home');
+        window.location.hash = 'home';
+        return;
+      }
+
+      const userData = TokenUtil.getUserData();
+      if (userData) setUser(userData);
+    };
+
+    window.addEventListener('cafecito:auth-token-changed', syncAuthFromStorage);
+    window.addEventListener('storage', syncAuthFromStorage);
+    return () => {
+      window.removeEventListener('cafecito:auth-token-changed', syncAuthFromStorage);
+      window.removeEventListener('storage', syncAuthFromStorage);
+    };
   }, []);
 
   const showLogin = () => {
@@ -170,8 +195,11 @@ function App() {
     }
   };
 
-  const handleOpenProductDetails = (productId) => {
-    setSelectedProductId(String(productId));
+  const handleOpenProductDetails = (productOrId) => {
+    const product = productOrId && typeof productOrId === 'object' ? productOrId : null;
+    const productId = product?.id ?? productOrId;
+
+    setSelectedProduct(product);
     setCurrentPage('product-details');
     window.location.hash = `product-${productId}`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -181,10 +209,6 @@ function App() {
     setCartCount((count) => count + (quantity || 1));
   };
 
-  const selectedProduct = products.find(
-    (product) => String(product.id) === String(selectedProductId)
-  );
-
   const handleLogout = () => {
     TokenUtil.removeToken();
     TokenUtil.removeUserData();
@@ -192,6 +216,7 @@ function App() {
     setUser(null);
     setUserPhotoUrl('');
     setCartCount(0);
+    setSelectedProduct(null);
     setCurrentPage('home');
     window.location.hash = 'home';
   };
@@ -325,6 +350,7 @@ function App() {
         ) : currentPage === 'admin' ? (
           <AdminDashboard
             onNavigate={handleNavigate}
+            onLogout={handleLogout}
             isAuthenticated={isAuthenticated}
             user={user}
           />

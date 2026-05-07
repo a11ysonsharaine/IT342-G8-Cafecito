@@ -7,7 +7,7 @@ import './Cart.css';
 function Cart({ onNavigate, onBack }) {
   const { cartItems, removeFromCart, updateCartQuantity, clearCart, cartCount, cartTotal } = useCart();
   const discount = cartTotal >= 1000 ? 100 : 0;
-  const deliveryFee = 50;
+  const deliveryFee = 20;
   const finalTotal = Math.max(0, cartTotal - discount + deliveryFee);
 
   if (cartItems.length === 0) {
@@ -136,7 +136,7 @@ function Cart({ onNavigate, onBack }) {
 
             <div className="cart-summary-row">
               <span>Delivery Fee</span>
-              <span>₱50.00</span>
+              <span>₱{deliveryFee.toFixed(2)}</span>
             </div>
 
             <div className="cart-summary-total">

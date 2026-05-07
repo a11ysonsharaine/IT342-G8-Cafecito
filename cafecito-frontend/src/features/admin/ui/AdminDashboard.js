@@ -1,22 +1,27 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   CheckCircle,
+  ChevronDown,
   Clock,
   Coffee,
   Edit2,
+  LogOut,
   Package,
   Plus,
   Save,
   Search,
   Trash2,
   TrendingUp,
+  User,
   Users,
   X,
 } from 'lucide-react';
 import { useCart } from '../../../core/contexts/CartContext';
-import { products as seededProducts } from '../../menu/model/products';
+import { ApiService } from '../../../core/base/apiService';
+import '../../../core/base/ui/Navbar.css';
 import './AdminDashboard.css';
+import logo from '../../../logo.png';
 
 function ProductThumb({ src, alt }) {
   const [failed, setFailed] = useState(false);
@@ -29,23 +34,118 @@ function ProductThumb({ src, alt }) {
 }
 
 function MenuItemModal({ onClose, onSave, title, initialData }) {
+  const fileInputRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [fileError, setFileError] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     category: initialData?.category || 'Hot Coffee',
     price: initialData?.price || 0,
     description: initialData?.description || '',
-    image: initialData?.image || '',
     available: initialData?.available ?? true,
     stock: initialData?.stock || 50,
   });
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    if (initialData) {
-      onSave({ ...formData, id: initialData.id });
+  useEffect(() => {
+    setPreviewUrl('');
+    setSelectedFile(null);
+    setFileError('');
+    setSubmitError('');
+    setSubmitSuccess('');
+  }, [initialData]);
+
+  useEffect(() => () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+  }, [previewUrl]);
+
+  const validateImageFile = (file) => {
+    if (!file) return 'Please choose an image file.';
+    const allowedTypes = ['image/png', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      return 'Only JPG and PNG files are allowed.';
+    }
+    const maxBytes = 2 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      return 'File size must not exceed 2MB.';
+    }
+    return '';
+  };
+
+  const onPickFileClick = () => {
+    setSubmitError('');
+    setSubmitSuccess('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const onFileChange = (event) => {
+    setFileError('');
+    setSubmitError('');
+    setSubmitSuccess('');
+
+    const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
+    if (!file) {
+      setSelectedFile(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPreviewUrl('');
       return;
     }
-    onSave(formData);
+
+    const err = validateImageFile(file);
+    if (err) {
+      setFileError(err);
+      setSelectedFile(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPreviewUrl('');
+      return;
+    }
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    setSubmitError('');
+    setSubmitSuccess('');
+
+    setIsSubmitting(true);
+    try {
+      const payload = initialData
+        ? { ...formData, id: initialData.id, imageFile: selectedFile }
+        : { ...formData, imageFile: selectedFile };
+
+      const result = await onSave(payload);
+      if (!result?.ok) {
+        setSubmitError(result?.error || 'Save failed. Please try again.');
+        return;
+      }
+
+      setSubmitSuccess('Saved successfully.');
+      setTimeout(() => {
+        onClose();
+      }, 700);
+    } catch (error) {
+      setSubmitError(error?.message || 'Save failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -118,12 +218,33 @@ function MenuItemModal({ onClose, onSave, title, initialData }) {
           </label>
 
           <label>
-            <span>Image URL</span>
-            <input
-              value={formData.image}
-              onChange={(e) => setFormData((prev) => ({ ...prev, image: e.target.value }))}
-              required
-            />
+            <span>Product Image</span>
+            <div className="admin-image-picker">
+              <button type="button" className="admin-btn admin-btn-soft" onClick={onPickFileClick}>
+                Choose Image
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg"
+                onChange={onFileChange}
+                className="admin-file-input"
+              />
+            </div>
+
+            {(fileError || submitError || submitSuccess) && (
+              <p className="admin-muted" role={fileError || submitError ? 'alert' : undefined}>
+                {fileError || submitError || submitSuccess}
+              </p>
+            )}
+
+            <div className="admin-image-preview">
+              {previewUrl ? (
+                <img src={previewUrl} alt="Preview" />
+              ) : initialData?.image ? (
+                <img src={initialData.image} alt={initialData.name || 'Current'} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              ) : null}
+            </div>
           </label>
 
           <label className="admin-checkbox-row">
@@ -136,8 +257,10 @@ function MenuItemModal({ onClose, onSave, title, initialData }) {
           </label>
 
           <div className="admin-modal-actions">
-            <button type="button" className="admin-btn admin-btn-soft" onClick={onClose}>Cancel</button>
-            <button type="submit" className="admin-btn admin-btn-primary"><Save size={16} /> Save Item</button>
+            <button type="button" className="admin-btn admin-btn-soft" onClick={onClose} disabled={isSubmitting}>Cancel</button>
+            <button type="submit" className="admin-btn admin-btn-primary" disabled={isSubmitting}>
+              <Save size={16} /> {isSubmitting ? 'Saving…' : 'Save Item'}
+            </button>
           </div>
         </form>
       </div>
@@ -240,7 +363,7 @@ function OrderMonitoring({ orders }) {
   );
 }
 
-function AdminDashboard({ onNavigate, isAuthenticated, user }) {
+function AdminDashboard({ onNavigate, onLogout, isAuthenticated, user }) {
   const { orders } = useCart();
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
@@ -249,6 +372,28 @@ function AdminDashboard({ onNavigate, isAuthenticated, user }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const mapApiProductToMenuItem = (p) => ({
+    id: String(p.id),
+    name: p.name,
+    category: p.categoryName || 'Other',
+    price: Number(p.priceCents || 0),
+    description: p.description || '',
+    image: p.imageUrl || '',
+    available: Boolean(p.active),
+    stock: 50,
+  });
+
+  const mapMenuItemToUpsertPayload = (item, override = {}) => ({
+    name: item.name,
+    description: item.description,
+    priceCents: Math.round(Number(item.price || 0)),
+    categoryName: item.category,
+    featured: false,
+    active: Boolean(item.available),
+    ...override,
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -262,18 +407,23 @@ function AdminDashboard({ onNavigate, isAuthenticated, user }) {
       return;
     }
 
-    const items = seededProducts.map((product) => ({
-      id: String(product.id),
-      name: product.name,
-      category: product.category,
-      price: Number(product.price),
-      description: product.description,
-      image: product.image,
-      available: true,
-      stock: Math.floor(Math.random() * 50) + 10,
-    }));
+    const fetchAdminMenu = async () => {
+      try {
+        const { response, data } = await ApiService.getAdminMenuProducts();
+        if (!response.ok) {
+          console.warn('getAdminMenuProducts failed', response.status, data);
+          setMenuItems([]);
+          return;
+        }
+        const mapped = Array.isArray(data) ? data.map(mapApiProductToMenuItem) : [];
+        setMenuItems(mapped);
+      } catch (error) {
+        console.error('Error fetching admin menu:', error);
+        setMenuItems([]);
+      }
+    };
 
-    setMenuItems(items);
+    fetchAdminMenu();
   }, [isAuthenticated, onNavigate, user?.role]);
 
   const totalOrders = orders.length;
@@ -294,28 +444,99 @@ function AdminDashboard({ onNavigate, isAuthenticated, user }) {
     return matchesSearch && matchesCategory;
   });
 
-  const handleAddItem = (newItem) => {
-    const item = { ...newItem, id: `menu-${Date.now()}` };
-    setMenuItems((prev) => [...prev, item]);
-    setIsAddModalOpen(false);
-  };
+  const handleAddItem = async (newItem) => {
+    try {
+      const payload = mapMenuItemToUpsertPayload(newItem, { active: Boolean(newItem.available) });
+      const { response, data } = await ApiService.createAdminMenuProduct(payload);
+      if (!response.ok) {
+        console.warn('createAdminMenuProduct failed', response.status, data);
+        return { ok: false, error: data?.message || `Create failed (${response.status})` };
+      }
 
-  const handleUpdateItem = (updatedItem) => {
-    setMenuItems((prev) => prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
-    setIsEditModalOpen(false);
-    setEditingItem(null);
-  };
+      let savedApiProduct = data;
+      if (newItem.imageFile) {
+        const upload = await ApiService.uploadAdminMenuProductImage(savedApiProduct.id, newItem.imageFile, true);
+        if (!upload.response.ok) {
+          console.warn('uploadAdminMenuProductImage failed', upload.response.status, upload.data);
+          return { ok: false, error: upload.data?.message || `Image upload failed (${upload.response.status})` };
+        }
+        savedApiProduct = upload.data;
+      }
 
-  const handleDeleteItem = (id) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      setMenuItems((prev) => prev.filter((item) => item.id !== id));
+      const created = mapApiProductToMenuItem(savedApiProduct);
+      setMenuItems((prev) => [...prev, created]);
+      return { ok: true };
+    } catch (error) {
+      console.error('Error creating product:', error);
+      return { ok: false, error: 'Create failed. Please try again.' };
     }
   };
 
-  const handleToggleAvailability = (id) => {
-    setMenuItems((prev) => prev.map((item) => (
-      item.id === id ? { ...item, available: !item.available } : item
-    )));
+  const handleUpdateItem = async (updatedItem) => {
+    try {
+      const payload = mapMenuItemToUpsertPayload(updatedItem, { active: Boolean(updatedItem.available) });
+      const { response, data } = await ApiService.updateAdminMenuProduct(updatedItem.id, payload);
+      if (!response.ok) {
+        console.warn('updateAdminMenuProduct failed', response.status, data);
+        return { ok: false, error: data?.message || `Update failed (${response.status})` };
+      }
+
+      let savedApiProduct = data;
+      if (updatedItem.imageFile) {
+        const upload = await ApiService.uploadAdminMenuProductImage(updatedItem.id, updatedItem.imageFile, true);
+        if (!upload.response.ok) {
+          console.warn('uploadAdminMenuProductImage failed', upload.response.status, upload.data);
+          return { ok: false, error: upload.data?.message || `Image upload failed (${upload.response.status})` };
+        }
+        savedApiProduct = upload.data;
+      }
+
+      const saved = mapApiProductToMenuItem(savedApiProduct);
+      // preserve ephemeral UI-only fields
+      saved.stock = updatedItem.stock;
+
+      setMenuItems((prev) => prev.map((item) => (item.id === saved.id ? saved : item)));
+      return { ok: true };
+    } catch (error) {
+      console.error('Error updating product:', error);
+      return { ok: false, error: 'Update failed. Please try again.' };
+    }
+  };
+
+  const handleDeleteItem = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this item?')) return;
+
+    try {
+      const { response, data } = await ApiService.deleteAdminMenuProduct(id);
+      if (!response.ok) {
+        console.warn('deleteAdminMenuProduct failed', response.status, data);
+        return;
+      }
+      setMenuItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+  };
+
+  const handleToggleAvailability = async (id) => {
+    const item = menuItems.find((i) => i.id === id);
+    if (!item) return;
+
+    const nextAvailable = !item.available;
+    try {
+      const payload = mapMenuItemToUpsertPayload(item, { active: nextAvailable });
+      const { response, data } = await ApiService.updateAdminMenuProduct(id, payload);
+      if (!response.ok) {
+        console.warn('toggle availability failed', response.status, data);
+        return;
+      }
+
+      const saved = mapApiProductToMenuItem(data);
+      saved.stock = item.stock;
+      setMenuItems((prev) => prev.map((p) => (p.id === id ? saved : p)));
+    } catch (error) {
+      console.error('Error toggling availability:', error);
+    }
   };
 
   const isAdmin = (user?.role || '').trim().toLowerCase() === 'admin';
@@ -329,25 +550,54 @@ function AdminDashboard({ onNavigate, isAuthenticated, user }) {
         <div className="admin-topbar-inner">
           <div className="admin-brand">
             <div className="admin-brand-left">
-              <Coffee size={26} />
-              <span className="admin-brand-title">Cafecito Admin</span>
-              <span className="admin-chip">ADMIN PANEL</span>
+              <img src={logo} alt="Cafecito Logo" className="admin-brand-logo" />
+              <span className="admin-brand-title">Cafecito</span>
             </div>
           </div>
+          <div className="admin-topbar-center">Admin</div>
           <div className="admin-topbar-right">
-            <div className="admin-user-info">
-              <p className="admin-user-name">{user?.name || 'Admin'}</p>
-              <p className="admin-user-email">{user?.email || ''}</p>
+            <div className="navbar-user-menu">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="user-menu-trigger"
+                aria-label="Open account menu"
+              >
+                <div className="user-avatar">
+                  <span className="user-avatar-text">{user?.name?.charAt(0).toUpperCase() || 'A'}</span>
+                </div>
+                <span className="user-name user-name-light">{user?.name?.split(' ')[0] || 'Admin'}</span>
+                <ChevronDown
+                  size={13}
+                  className={`user-menu-icon ${userMenuOpen ? 'menu-icon-open' : ''} menu-icon-light`}
+                />
+              </button>
+
+              {userMenuOpen && (
+                <div className="user-dropdown">
+                  <button
+                    type="button"
+                    onClick={() => { onNavigate('profile'); setUserMenuOpen(false); }}
+                    className="dropdown-item"
+                  >
+                    <User size={14} className="dropdown-icon" /> Profile
+                  </button>
+                  <div className="dropdown-divider" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onLogout) {
+                        onLogout();
+                      }
+                      setUserMenuOpen(false);
+                    }}
+                    className="dropdown-item dropdown-item-logout"
+                  >
+                    <LogOut size={14} /> Logout
+                  </button>
+                </div>
+              )}
             </div>
-            <button
-              type="button"
-              className="admin-avatar-btn"
-              onClick={() => onNavigate('profile')}
-              aria-label="Open profile"
-              title="Profile"
-            >
-              {(user?.name || 'A').charAt(0).toUpperCase()}
-            </button>
           </div>
         </div>
       </header>
@@ -589,6 +839,7 @@ OrderMonitoring.propTypes = {
 AdminDashboard.propTypes = {
   isAuthenticated: PropTypes.bool,
   onNavigate: PropTypes.func.isRequired,
+  onLogout: PropTypes.func,
   user: PropTypes.shape({
     email: PropTypes.string,
     name: PropTypes.string,
@@ -598,6 +849,7 @@ AdminDashboard.propTypes = {
 
 AdminDashboard.defaultProps = {
   isAuthenticated: false,
+  onLogout: null,
   user: null,
 };
 

@@ -2,6 +2,7 @@
   background: #f5ebdd;
   min-height: 100vh;
   padding: 2rem 1rem;
+  position: relative;
 }
 
 .profile-shell {
@@ -19,6 +20,20 @@
   cursor: pointer;
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
+}
+
+.profile-back-floating {
+  position: fixed;
+  top: 92px;
+  left: 24px;
+  z-index: 60;
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .profile-back-floating {
+    left: 16px;
+  }
 }
 
 .profile-back-button:hover {
