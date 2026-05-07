@@ -25,6 +25,7 @@ function Navbar({
   const isLanding = currentPage === 'home';
   const isGuestPage = ['home', 'login', 'register'].includes(currentPage);
   const isAdmin = (user?.role || '').trim().toLowerCase() === 'admin';
+  const isProfile = currentPage === 'profile';
 
   useEffect(() => {
     const onScroll = () => {
@@ -158,7 +159,7 @@ function Navbar({
               </>
             ) : (
               <>
-                {navLink('dashboard', 'Menu')}
+                {!isProfile && navLink('dashboard', 'Menu')}
                 {isAdmin && navLink('admin', 'Admin')}
               </>
             )}
@@ -240,14 +241,6 @@ function Navbar({
                     >
                       <User size={14} className="dropdown-icon" /> Profile
                     </button>
-                    {isAdmin && (
-                      <button
-                        onClick={() => { handleNavigation('admin'); setUserMenuOpen(false); }}
-                        className="dropdown-item"
-                      >
-                        <User size={14} className="dropdown-icon" /> Admin Panel
-                      </button>
-                    )}
                     <div className="dropdown-divider" />
                     <button
                       onClick={handleLogout}

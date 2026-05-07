@@ -10,7 +10,23 @@ const parseJsonSafe = async (response) => {
   try {
     return JSON.parse(text);
   } catch (error) {
+    // Some endpoints may return non-JSON or empty bodies; avoid throwing in the client.
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('parseJsonSafe: invalid JSON response', error);
+    }
     return null;
+  }
+};
+
+const clearAuthOnUnauthorized = (response, options = {}) => {
+  if (!response) return;
+
+  const { autoLogout = true } = options;
+  if (!autoLogout) return;
+
+  if (response.status === 401) {
+    TokenUtil.removeToken();
+    TokenUtil.removeUserData();
   }
 };
 
@@ -62,6 +78,10 @@ export const ApiService = {
       headers: TokenUtil.getAuthHeader()
     });
 
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: true });
+    }
+
     if (response.ok) {
       const data = (await parseJsonSafe(response)) || {};
       if (!(data.success && data.data)) {
@@ -90,6 +110,10 @@ export const ApiService = {
       body: JSON.stringify(profileData),
     });
 
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: true });
+    }
+
     return { response, data: (await parseJsonSafe(response)) || {} };
   },
 
@@ -105,6 +129,10 @@ export const ApiService = {
       },
       body: JSON.stringify(payload),
     });
+
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: true });
+    }
 
     return { response, data: (await parseJsonSafe(response)) || {} };
   },
@@ -124,6 +152,10 @@ export const ApiService = {
       },
       body: formData,
     });
+
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: true });
+    }
 
     const data = (await parseJsonSafe(response)) || {};
     if (!response.ok) {
@@ -150,9 +182,160 @@ export const ApiService = {
       headers: TokenUtil.getAuthHeader()
     });
 
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: true });
+    }
+
     if (!response.ok) return null;
 
     const blob = await response.blob();
     return URL.createObjectURL(blob);
-  }
+  },
+
+  /**
+   * Public menu
+   */
+  getMenuCategories: async () => {
+    const response = await fetch(API_ENDPOINTS.MENU.CATEGORIES);
+    return { response, data: (await parseJsonSafe(response)) || [] };
+  },
+
+  getMenuProducts: async (categoryId) => {
+    const url = categoryId
+      ? `${API_ENDPOINTS.MENU.PRODUCTS}?categoryId=${encodeURIComponent(categoryId)}`
+      : API_ENDPOINTS.MENU.PRODUCTS;
+
+    const response = await fetch(url);
+    return { response, data: (await parseJsonSafe(response)) || [] };
+  },
+
+  /**
+   * Admin menu management (JWT protected + admin role)
+   */
+  getAdminMenuProducts: async () => {
+    const response = await fetch(API_ENDPOINTS.ADMIN.MENU_PRODUCTS, {
+      headers: TokenUtil.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      // Admin endpoints should never force a logout. A single 401 here could be transient
+      // (e.g., backend restart) and logging out mid-form is a terrible UX.
+      clearAuthOnUnauthorized(response, { autoLogout: false });
+    }
+
+    return { response, data: (await parseJsonSafe(response)) || [] };
+  },
+
+  createAdminMenuProduct: async (payload) => {
+    const response = await fetch(API_ENDPOINTS.ADMIN.MENU_PRODUCTS, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...TokenUtil.getAuthHeader(),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: false });
+    }
+
+    return { response, data: (await parseJsonSafe(response)) || {} };
+  },
+
+  updateAdminMenuProduct: async (id, payload) => {
+    const response = await fetch(`${API_ENDPOINTS.ADMIN.MENU_PRODUCTS}/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...TokenUtil.getAuthHeader(),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: false });
+    }
+
+    return { response, data: (await parseJsonSafe(response)) || {} };
+  },
+
+  deleteAdminMenuProduct: async (id) => {
+    const response = await fetch(`${API_ENDPOINTS.ADMIN.MENU_PRODUCTS}/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: TokenUtil.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: false });
+    }
+
+    return { response, data: (await parseJsonSafe(response)) || null };
+  },
+
+  uploadAdminMenuProductImage: async (id, file, deleteOld = true) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const url = `${API_ENDPOINTS.ADMIN.MENU_PRODUCTS}/${encodeURIComponent(id)}/image?deleteOld=${deleteOld ? 'true' : 'false'}`;
+
+    const headers = new Headers();
+    headers.set('Accept', 'application/json');
+    const token = TokenUtil.getToken();
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    } else if (process.env.NODE_ENV !== 'production') {
+      console.warn('uploadAdminMenuProductImage: missing auth token; request will be unauthorized');
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: false });
+    }
+
+    return { response, data: (await parseJsonSafe(response)) || {} };
+  },
+
+  /**
+   * Orders (JWT protected)
+   */
+  placeOrder: async (payload) => {
+    const response = await fetch(API_ENDPOINTS.ORDERS.PLACE, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...TokenUtil.getAuthHeader(),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = (await parseJsonSafe(response)) || {};
+
+    if (!response.ok && response.status === 401) {
+      TokenUtil.removeToken();
+      TokenUtil.removeUserData();
+      return {
+        response,
+        data: {
+          ...data,
+          message: data?.message || 'Session expired. Please log in again and retry.',
+        },
+      };
+    }
+
+    return { response, data };
+  },
+
+  getMyOrders: async () => {
+    const response = await fetch(API_ENDPOINTS.ORDERS.MY, {
+      headers: TokenUtil.getAuthHeader(),
+    });
+
+    return { response, data: (await parseJsonSafe(response)) || [] };
+  },
 };

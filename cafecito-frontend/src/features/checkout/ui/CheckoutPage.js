@@ -4,7 +4,6 @@ import {
   AlertCircle,
   ArrowLeft,
   Banknote,
-  CreditCard,
   Lock,
   MapPin,
   ShoppingBag,
@@ -27,8 +26,11 @@ function CheckoutPage({ onNavigate, isAuthenticated, user, discount }) {
   const { cartItems, cartTotal, placeOrder } = useCart();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash-on-delivery');
   const [fulfillment, setFulfillment] = useState('delivery');
+  const [gcashPaidConfirmed, setGcashPaidConfirmed] = useState(false);
+  const [gcashReference, setGcashReference] = useState('');
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
     fullName: user?.name || '',
@@ -48,7 +50,7 @@ function CheckoutPage({ onNavigate, isAuthenticated, user, discount }) {
     }
   }, [cartItems.length, isAuthenticated, onNavigate]);
 
-  const deliveryFee = fulfillment === 'delivery' ? 1.5 : 0;
+  const deliveryFee = fulfillment === 'delivery' ? 20 : 0;
   const finalTotal = useMemo(
     () => Math.max(0, cartTotal - Number(discount || 0) + deliveryFee),
     [cartTotal, deliveryFee, discount]
@@ -86,23 +88,24 @@ function CheckoutPage({ onNavigate, isAuthenticated, user, discount }) {
     setLoading(true);
     setSubmitted(true);
 
-    placeOrder({
-      shippingInfo: form,
-      paymentMethod,
-      discount,
-      fulfillment,
-    });
+    setSubmitError('');
 
-    onNavigate('order-processing');
+    try {
+      await placeOrder({
+        shippingInfo: form,
+        paymentMethod,
+        discount,
+        fulfillment,
+      });
+
+      onNavigate('order-processing');
+    } catch (error) {
+      setSubmitError(error?.message || 'Failed to place order');
+      setLoading(false);
+    }
   };
 
   const paymentOptions = [
-    {
-      value: 'card',
-      label: 'Credit/Debit Card',
-      description: 'Visa, Mastercard, JCB',
-      icon: CreditCard,
-    },
     {
       value: 'gcash',
       label: 'GCash',
@@ -116,6 +119,9 @@ function CheckoutPage({ onNavigate, isAuthenticated, user, discount }) {
       icon: Banknote,
     },
   ];
+
+  const isGcashPayment = paymentMethod === 'gcash';
+  const gcashQrValue = `Cafecito GCash Payment | Total: ₱${finalTotal.toFixed(2)} | Name: ${form.fullName || 'Customer'} | Order: Pending`;
 
   return (
     <div className="checkout-page">
@@ -299,6 +305,57 @@ function CheckoutPage({ onNavigate, isAuthenticated, user, discount }) {
                   })}
                 </div>
               </section>
+
+              {isGcashPayment && (
+                <section className="checkout-card checkout-gcash-card">
+                  <h2 className="checkout-section-title">
+                    <span className="checkout-step-badge">4</span>
+                    <span>Pay with GCash first</span>
+                  </h2>
+                  <div className="checkout-gcash-content">
+                    <div className="checkout-gcash-copy">
+                      <p className="checkout-gcash-label">GCash QR Payment</p>
+                      <h3 className="checkout-gcash-title">Scan before placing your order</h3>
+                      <p className="checkout-gcash-text">
+                        Open GCash, scan the QR code below, pay the exact total, then confirm below so we can process your order.
+                      </p>
+                      <div className="checkout-gcash-note">
+                        <strong>Total to pay:</strong> ₱{finalTotal.toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="checkout-gcash-qr-wrap">
+                      <img
+                        src="/images/gcash-qr.png"
+                        alt="GCash QR Code"
+                        className="checkout-gcash-qr-image"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="checkout-gcash-confirm">
+                    <label className="checkout-gcash-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={gcashPaidConfirmed}
+                        onChange={(e) => setGcashPaidConfirmed(e.target.checked)}
+                      />
+                      <span>I already paid using GCash</span>
+                    </label>
+                    <div>
+                      <label className="checkout-label" htmlFor="gcashReference">
+                        GCash reference number <span className="checkout-muted">(optional)</span>
+                      </label>
+                      <input
+                        id="gcashReference"
+                        className="checkout-input"
+                        value={gcashReference}
+                        onChange={(e) => setGcashReference(e.target.value)}
+                        placeholder="Enter payment reference"
+                      />
+                    </div>
+                  </div>
+                </section>
+              )}
             </div>
 
             <aside className="checkout-summary sticky">
@@ -343,18 +400,28 @@ function CheckoutPage({ onNavigate, isAuthenticated, user, discount }) {
                 <span>₱{finalTotal.toFixed(2)}</span>
               </div>
 
+              {submitError && (
+                <p className="checkout-error" role="alert">
+                  <AlertCircle size={11} /> {submitError}
+                </p>
+              )}
+
               <button
                 type="submit"
-                disabled={!isFormValid() || loading}
+                disabled={!isFormValid() || loading || (isGcashPayment && !gcashPaidConfirmed)}
                 className="checkout-submit"
               >
                 <Lock size={16} />
-                {loading ? 'Processing...' : 'Place Order'}
+                {loading ? 'Processing...' : isGcashPayment ? 'I Paid, Place Order' : 'Place Order'}
               </button>
 
               <p className="checkout-secure-note">
                 <Lock size={11} /> Your information is secure
               </p>
+
+              {isGcashPayment && !gcashPaidConfirmed && (
+                <p className="checkout-note">Please pay with GCash first, then confirm the checkbox to continue.</p>
+              )}
 
               {submitted && !loading && (
                 <p className="checkout-note">Order submitted. Redirecting to processing page...</p>
