@@ -1,5 +1,5 @@
 // API configuration constants
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081/api';
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -29,4 +29,5 @@ export const API_ENDPOINTS = {
 
 // App constants
 export const TOKEN_KEY = 'token';
+
 
