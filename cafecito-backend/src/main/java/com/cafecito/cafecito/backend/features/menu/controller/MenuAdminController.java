@@ -53,19 +53,22 @@ public class MenuAdminController {
     private final UserRepository userRepository;
     private final SupabaseStorageClient storageClient;
     private final Path uploadRoot;
+    private final String publicApiUrl;
 
     public MenuAdminController(
             CategoryRepository categoryRepository,
             ProductRepository productRepository,
             UserRepository userRepository,
             SupabaseStorageClient storageClient,
-            @Value("${cafecito.uploadDir:./uploads}") String uploadDir
+            @Value("${cafecito.uploadDir:./uploads}") String uploadDir,
+            @Value("${cafecito.publicApiUrl:}") String publicApiUrl
     ) {
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.storageClient = storageClient;
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
+        this.publicApiUrl = publicApiUrl;
     }
 
     @GetMapping("/products")
@@ -190,7 +193,10 @@ public class MenuAdminController {
         Files.createDirectories(target.getParent());
         Files.write(target, file.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
-        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        String baseUrl = publicApiUrl;
+        if (baseUrl == null || baseUrl.isBlank()) {
+          baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        }
         String encodedKey = encodePath(objectKey);
         return baseUrl + "/uploads/" + bucket + "/" + encodedKey;
     }
