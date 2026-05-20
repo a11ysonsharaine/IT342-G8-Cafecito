@@ -47,7 +47,6 @@ function MenuItemModal({ onClose, onSave, title, initialData }) {
     price: initialData?.price || 0,
     description: initialData?.description || '',
     available: initialData?.available ?? true,
-    stock: initialData?.stock || 50,
   });
 
   useEffect(() => {
@@ -192,16 +191,6 @@ function MenuItemModal({ onClose, onSave, title, initialData }) {
                 step="0.01"
                 value={formData.price}
                 onChange={(e) => setFormData((prev) => ({ ...prev, price: Number(e.target.value) }))}
-                required
-              />
-            </label>
-            <label>
-              <span>Stock</span>
-              <input
-                type="number"
-                min="0"
-                value={formData.stock}
-                onChange={(e) => setFormData((prev) => ({ ...prev, stock: Number(e.target.value) }))}
                 required
               />
             </label>
@@ -382,7 +371,6 @@ function AdminDashboard({ onNavigate, onLogout, isAuthenticated, user }) {
     description: p.description || '',
     image: p.imageUrl || '',
     available: Boolean(p.active),
-    stock: 50,
   });
 
   const mapMenuItemToUpsertPayload = (item, override = {}) => ({
@@ -492,8 +480,6 @@ function AdminDashboard({ onNavigate, onLogout, isAuthenticated, user }) {
       }
 
       const saved = mapApiProductToMenuItem(savedApiProduct);
-      // preserve ephemeral UI-only fields
-      saved.stock = updatedItem.stock;
 
       setMenuItems((prev) => prev.map((item) => (item.id === saved.id ? saved : item)));
       return { ok: true };
@@ -532,7 +518,6 @@ function AdminDashboard({ onNavigate, onLogout, isAuthenticated, user }) {
       }
 
       const saved = mapApiProductToMenuItem(data);
-      saved.stock = item.stock;
       setMenuItems((prev) => prev.map((p) => (p.id === id ? saved : p)));
     } catch (error) {
       console.error('Error toggling availability:', error);
@@ -726,7 +711,6 @@ function AdminDashboard({ onNavigate, onLogout, isAuthenticated, user }) {
                     <p>{item.description}</p>
                     <div className="admin-menu-meta">
                       <span>PHP {Number(item.price).toFixed(2)}</span>
-                      <span>Stock: {item.stock}</span>
                     </div>
                     <div className="admin-menu-actions">
                       <button
@@ -804,7 +788,6 @@ MenuItemModal.propTypes = {
     image: PropTypes.string,
     name: PropTypes.string,
     price: PropTypes.number,
-    stock: PropTypes.number,
   }),
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
