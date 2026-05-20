@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/menu")
+@RequestMapping("/menu")
 public class MenuController {
 
     private final CategoryRepository categoryRepository;
