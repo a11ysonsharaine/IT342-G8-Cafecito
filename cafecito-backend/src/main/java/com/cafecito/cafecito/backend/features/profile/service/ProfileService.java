@@ -7,7 +7,6 @@ import com.cafecito.cafecito.backend.core.utils.FileValidationUtil;
 import com.cafecito.cafecito.backend.features.profile.dto.ChangePasswordRequest;
 import com.cafecito.cafecito.backend.features.profile.dto.ProfileResponse;
 import com.cafecito.cafecito.backend.features.profile.dto.UpdateProfileRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,15 +20,21 @@ import java.io.IOException;
 public class ProfileService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProfileService.class);
+    private static final String USER_NOT_FOUND = "User not found";
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
+
+    public ProfileService(UserRepository userRepository,
+                          PasswordEncoder passwordEncoder,
+                          JdbcTemplate jdbcTemplate) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     private static String normalizeRole(String role) {
         if (role == null) return "customer";
@@ -62,12 +67,29 @@ public class ProfileService {
         return response;
     }
 
+    private ProfileResponse toProfileResponse(User user) {
+        if (user == null) {
+            return null;
+        }
+
+        ProfileResponse response = new ProfileResponse();
+        response.setId(user.getId());
+        response.setEmail(user.getEmail());
+        response.setName(user.getName());
+        response.setPhoneNumber(user.getPhoneNumber());
+        response.setRole(normalizeRole(user.getRole()));
+        response.setHasPhoto(user.getPhotoBytes() != null);
+        response.setCreatedAt(user.getCreatedAt());
+        response.setUpdatedAt(user.getUpdatedAt());
+        return response;
+    }
+
     @org.springframework.transaction.annotation.Transactional
     public ApiResponse updateProfile(String email, UpdateProfileRequest request) {
         User user = findByEmail(email);
 
         if (user == null) {
-            return new ApiResponse(false, "User not found");
+            return new ApiResponse(false, USER_NOT_FOUND);
         }
 
         if (request.getName() != null) {
@@ -77,17 +99,15 @@ public class ProfileService {
             user.setPhoneNumber(request.getPhoneNumber());
         }
 
-        User saved = userRepository.save(user);
+        String sql = "UPDATE users SET full_name = ?, phone_number = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?";
+        int rowsUpdated = jdbcTemplate.update(sql, user.getName(), user.getPhoneNumber(), email);
 
-        ProfileResponse profileResponse = new ProfileResponse();
-        profileResponse.setId(saved.getId());
-        profileResponse.setEmail(saved.getEmail());
-        profileResponse.setName(saved.getName());
-        profileResponse.setPhoneNumber(saved.getPhoneNumber());
-        profileResponse.setRole(normalizeRole(saved.getRole()));
-        profileResponse.setHasPhoto(saved.getPhotoBytes() != null);
-        profileResponse.setCreatedAt(saved.getCreatedAt());
-        profileResponse.setUpdatedAt(saved.getUpdatedAt());
+        if (rowsUpdated == 0) {
+            return new ApiResponse(false, "Failed to update profile");
+        }
+
+        User saved = findByEmail(email);
+        ProfileResponse profileResponse = toProfileResponse(saved);
 
         return new ApiResponse(true, "Profile updated successfully", profileResponse);
     }
@@ -97,25 +117,23 @@ public class ProfileService {
         User user = findByEmail(email);
 
         if (user == null) {
-            return new ApiResponse(false, "User not found");
+            return new ApiResponse(false, USER_NOT_FOUND);
         }
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             return new ApiResponse(false, "Current password is incorrect");
         }
 
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        User saved = userRepository.save(user);
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        String sql = "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?";
+        int rowsUpdated = jdbcTemplate.update(sql, encodedPassword, email);
 
-        ProfileResponse profileResponse = new ProfileResponse();
-        profileResponse.setId(saved.getId());
-        profileResponse.setEmail(saved.getEmail());
-        profileResponse.setName(saved.getName());
-        profileResponse.setPhoneNumber(saved.getPhoneNumber());
-        profileResponse.setRole(normalizeRole(saved.getRole()));
-        profileResponse.setHasPhoto(saved.getPhotoBytes() != null);
-        profileResponse.setCreatedAt(saved.getCreatedAt());
-        profileResponse.setUpdatedAt(saved.getUpdatedAt());
+        if (rowsUpdated == 0) {
+            return new ApiResponse(false, "Failed to change password");
+        }
+
+        User saved = findByEmail(email);
+        ProfileResponse profileResponse = toProfileResponse(saved);
 
         return new ApiResponse(true, "Password changed successfully", profileResponse);
     }
@@ -128,7 +146,7 @@ public class ProfileService {
 
         if (user == null) {
             logger.error("User not found: {}", email);
-            return new ApiResponse(false, "User not found");
+            return new ApiResponse(false, USER_NOT_FOUND);
         }
 
         if (file.isEmpty()) {
