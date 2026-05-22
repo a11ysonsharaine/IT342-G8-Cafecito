@@ -1,5 +1,6 @@
 package com.cafecito.cafecito.backend.features.profile.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,5 +15,6 @@ public class UpdateProfileRequest {
     private String name;
     
     @Size(max = 50, message = "Phone number must not exceed 50 characters")
+    @JsonAlias({"phone", "phone_number"})
     private String phoneNumber;
 }
