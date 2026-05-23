@@ -1,12 +1,25 @@
-import React, { createContext, useState, useCallback, useEffect, useMemo } from 'react';
+import React, { createContext, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { ApiService } from '../base/apiService';
+import { TokenUtil } from '../utils/tokenUtil';
 
 /**
  * Cart Item structure with deduplication support
  */
 export const CartContext = createContext();
 const CART_STORAGE_KEY = 'cafecito_cart_items_v1';
+
+const mapBackendCartItem = (item) => ({
+  cartId: String(item.id),
+  productId: item.productId,
+  name: item.productName,
+  image: item.imageUrl || '',
+  size: item.size || 'Regular',
+  sugarLevel: item.sugarLevel || 'Normal',
+  milkType: item.milkType || 'None',
+  quantity: Number(item.quantity || 1),
+  price: Number(item.priceCents || 0) / 100,
+});
 
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState(() => {
@@ -26,6 +39,94 @@ export function CartProvider({ children }) {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [orders, setOrders] = useState([]);
   const [lastOrder, setLastOrder] = useState(null);
+  const guestCartSnapshotRef = useRef(null);
+
+  const loadBackendCart = useCallback(async () => {
+    if (!TokenUtil.isAuthenticated()) {
+      return false;
+    }
+
+    try {
+      const { response, data } = await ApiService.getCart();
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const backendItems = Array.isArray(data) ? data.map(mapBackendCartItem) : [];
+      setCartItems(backendItems);
+      return true;
+    } catch (error) {
+      console.warn('Failed to load cart from backend', error);
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (TokenUtil.isAuthenticated()) {
+      if (guestCartSnapshotRef.current === null) {
+        guestCartSnapshotRef.current = cartItems;
+      }
+      loadBackendCart().catch((error) => {
+        console.warn('Failed to refresh cart after auth change', error);
+      });
+    }
+
+    const handleAuthChange = () => {
+      if (TokenUtil.isAuthenticated()) {
+        if (guestCartSnapshotRef.current === null) {
+          guestCartSnapshotRef.current = cartItems;
+        }
+        loadBackendCart().catch((error) => {
+          console.warn('Failed to refresh cart after auth token change', error);
+        });
+      } else if (guestCartSnapshotRef.current !== null) {
+        setCartItems(guestCartSnapshotRef.current);
+      } else {
+        setCartItems([]);
+      }
+    };
+
+    globalThis.addEventListener('cafecito:auth-token-changed', handleAuthChange);
+
+    return () => {
+      globalThis.removeEventListener('cafecito:auth-token-changed', handleAuthChange);
+    };
+  }, [cartItems, loadBackendCart]);
+
+  const applyLocalAddToCart = useCallback((item) => {
+    setCartItems((prev) => {
+      const existing = prev.find(
+        (ci) =>
+          ci.productId === item.productId
+          && ci.size === item.size
+          && ci.sugarLevel === item.sugarLevel
+          && ci.milkType === item.milkType
+      );
+
+      if (existing) {
+        return prev.map((ci) => (
+          ci.cartId === existing.cartId
+            ? { ...ci, quantity: ci.quantity + (item.quantity || 1) }
+            : ci
+        ));
+      }
+
+      const cartId = `${item.productId}-${item.size}-${item.sugarLevel}-${item.milkType}-${Date.now()}`;
+      return [...prev, { ...item, cartId }];
+    });
+  }, []);
+
+  const applyLocalQuantityUpdate = useCallback((cartId, quantity) => {
+    if (quantity <= 0) {
+      setCartItems((prev) => prev.filter((ci) => ci.cartId !== cartId));
+      return;
+    }
+
+    setCartItems((prev) => prev.map((ci) => (
+      ci.cartId === cartId ? { ...ci, quantity } : ci
+    )));
+  }, []);
 
   /**
    * Add item to cart with smart deduplication
@@ -33,59 +134,99 @@ export function CartProvider({ children }) {
    * Otherwise, create new cart entry with unique cartId
    */
   const addToCart = useCallback((item) => {
-    setCartItems((prev) => {
-      // Check if identical item already exists in cart
-      const existing = prev.find(
-        (ci) =>
-          ci.productId === item.productId &&
-          ci.size === item.size &&
-          ci.sugarLevel === item.sugarLevel &&
-          ci.milkType === item.milkType
-      );
+    if (TokenUtil.isAuthenticated()) {
+      ApiService.addToCart({
+        productId: item.productId,
+        quantity: item.quantity || 1,
+        size: item.size,
+        sugarLevel: item.sugarLevel,
+        milkType: item.milkType,
+      })
+        .then(({ response, data }) => {
+          if (!response.ok) {
+            throw new Error(data?.message || 'Failed to add item to cart');
+          }
 
-      // If exists, just increase quantity
-      if (existing) {
-        return prev.map((ci) =>
-          ci.cartId === existing.cartId
-            ? { ...ci, quantity: ci.quantity + (item.quantity || 1) }
-            : ci
-        );
-      }
+          return loadBackendCart();
+        })
+        .catch((error) => {
+          console.warn('Backend addToCart failed, falling back to local cart', error);
+          applyLocalAddToCart(item);
+        });
+      return;
+    }
 
-      // If new, generate unique cartId and add to cart
-      const cartId = `${item.productId}-${item.size}-${item.sugarLevel}-${item.milkType}-${Date.now()}`;
-      return [...prev, { ...item, cartId }];
-    });
-  }, []);
+    applyLocalAddToCart(item);
+  }, [applyLocalAddToCart, loadBackendCart]);
 
   /**
    * Remove item from cart by cartId
    */
   const removeFromCart = useCallback((cartId) => {
+    if (TokenUtil.isAuthenticated()) {
+      ApiService.removeFromCart(cartId)
+        .then(({ response }) => {
+          if (!response.ok) {
+            throw new Error('Failed to remove item from cart');
+          }
+
+          return loadBackendCart();
+        })
+        .catch((error) => {
+          console.warn('Backend removeFromCart failed, falling back to local cart', error);
+          setCartItems((prev) => prev.filter((ci) => ci.cartId !== cartId));
+        });
+      return;
+    }
+
     setCartItems((prev) => prev.filter((ci) => ci.cartId !== cartId));
-  }, []);
+  }, [loadBackendCart]);
 
   /**
    * Update quantity for a specific cart item
    */
   const updateCartQuantity = useCallback((cartId, quantity) => {
-    if (quantity <= 0) {
-      removeFromCart(cartId);
+    if (TokenUtil.isAuthenticated()) {
+      ApiService.updateCartQuantity(cartId, quantity)
+        .then(({ response }) => {
+          if (!response.ok) {
+            throw new Error('Failed to update cart quantity');
+          }
+
+          return loadBackendCart();
+        })
+        .catch((error) => {
+          console.warn('Backend updateCartQuantity failed, falling back to local cart', error);
+          applyLocalQuantityUpdate(cartId, quantity);
+        });
       return;
     }
-    setCartItems((prev) =>
-      prev.map((ci) =>
-        ci.cartId === cartId ? { ...ci, quantity } : ci
-      )
-    );
-  }, [removeFromCart]);
+
+    applyLocalQuantityUpdate(cartId, quantity);
+  }, [applyLocalQuantityUpdate, loadBackendCart]);
 
   /**
    * Clear entire cart
    */
   const clearCart = useCallback(() => {
+    if (TokenUtil.isAuthenticated()) {
+      ApiService.clearCart()
+        .then(({ response }) => {
+          if (!response.ok) {
+            throw new Error('Failed to clear cart');
+          }
+
+          return loadBackendCart();
+        })
+        .catch((error) => {
+          console.warn('Backend clearCart failed, clearing local cart', error);
+          setCartItems([]);
+        });
+      return;
+    }
+
     setCartItems([]);
-  }, []);
+  }, [loadBackendCart]);
 
   useEffect(() => {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));

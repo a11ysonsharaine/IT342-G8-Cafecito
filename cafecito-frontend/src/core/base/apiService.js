@@ -153,6 +153,81 @@ export const ApiService = {
       body: formData,
     });
 
+        /**
+         * Cart
+         */
+        getCart: async () => {
+          const response = await fetch(API_ENDPOINTS.CART.GET, {
+            headers: TokenUtil.getAuthHeader(),
+          });
+
+          if (!response.ok) {
+            clearAuthOnUnauthorized(response, { autoLogout: true });
+          }
+
+          return { response, data: (await parseJsonSafe(response)) || [] };
+        },
+
+        addToCart: async (payload) => {
+          const params = new URLSearchParams();
+          params.set('productId', payload.productId);
+          params.set('quantity', String(payload.quantity || 1));
+
+          if (payload.size) params.set('size', payload.size);
+          if (payload.sugarLevel) params.set('sugarLevel', payload.sugarLevel);
+          if (payload.milkType) params.set('milkType', payload.milkType);
+
+          const response = await fetch(`${API_ENDPOINTS.CART.ADD}?${params.toString()}`, {
+            method: 'POST',
+            headers: TokenUtil.getAuthHeader(),
+          });
+
+          if (!response.ok) {
+            clearAuthOnUnauthorized(response, { autoLogout: true });
+          }
+
+          return { response, data: (await parseJsonSafe(response)) || {} };
+        },
+
+        updateCartQuantity: async (itemId, quantity) => {
+          const response = await fetch(`${API_ENDPOINTS.CART.UPDATE(itemId)}?quantity=${encodeURIComponent(quantity)}`, {
+            method: 'PUT',
+            headers: TokenUtil.getAuthHeader(),
+          });
+
+          if (!response.ok) {
+            clearAuthOnUnauthorized(response, { autoLogout: true });
+          }
+
+          return { response, data: (await parseJsonSafe(response)) || {} };
+        },
+
+        removeFromCart: async (itemId) => {
+          const response = await fetch(API_ENDPOINTS.CART.REMOVE(itemId), {
+            method: 'DELETE',
+            headers: TokenUtil.getAuthHeader(),
+          });
+
+          if (!response.ok) {
+            clearAuthOnUnauthorized(response, { autoLogout: true });
+          }
+
+          return { response, data: (await parseJsonSafe(response)) || {} };
+        },
+
+        clearCart: async () => {
+          const response = await fetch(API_ENDPOINTS.CART.CLEAR, {
+            method: 'POST',
+            headers: TokenUtil.getAuthHeader(),
+          });
+
+          if (!response.ok) {
+            clearAuthOnUnauthorized(response, { autoLogout: true });
+          }
+
+          return { response, data: (await parseJsonSafe(response)) || {} };
+        },
+
     if (!response.ok) {
       clearAuthOnUnauthorized(response, { autoLogout: true });
     }
