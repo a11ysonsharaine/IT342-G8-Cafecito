@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
 
 function Dashboard({ onLogout }) {
-  const [user, setUser] = useState({ name: 'Guest', email: '' });
+  const [, setUser] = useState({ name: 'Guest', email: '' });
   const [currentView, setCurrentView] = useState('menu'); // 'menu' or 'cart'
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
