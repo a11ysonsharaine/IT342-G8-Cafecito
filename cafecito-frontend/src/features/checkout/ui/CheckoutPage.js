@@ -14,7 +14,6 @@ import './CheckoutPage.css';
 
 function SummaryImage({ src, alt }) {
   const [failed, setFailed] = useState(false);
-
   if (!src || failed) {
     return <div className="checkout-item-image-fallback">☕</div>;
   }
@@ -121,8 +120,6 @@ function CheckoutPage({ onNavigate, isAuthenticated, user, discount }) {
   ];
 
   const isGcashPayment = paymentMethod === 'gcash';
-  const gcashQrValue = `Cafecito GCash Payment | Total: ₱${finalTotal.toFixed(2)} | Name: ${form.fullName || 'Customer'} | Order: Pending`;
-
   return (
     <div className="checkout-page">
       <div className="checkout-wrapper checkout-page-wrapper">

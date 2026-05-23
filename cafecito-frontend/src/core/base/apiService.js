@@ -45,13 +45,13 @@ export const ApiService = {
       },
       body: JSON.stringify({ email, password }),
     });
-    
+
     const data = (await parseJsonSafe(response)) || {};
-    
+
     if (response.ok && data.token) {
       TokenUtil.setToken(data.token);
     }
-    
+
     return { response, data };
   },
 
@@ -66,7 +66,7 @@ export const ApiService = {
       },
       body: JSON.stringify(userData),
     });
-    
+
     return { response, data: (await parseJsonSafe(response)) || {} };
   },
 
@@ -75,7 +75,7 @@ export const ApiService = {
    */
   getProfile: async () => {
     const response = await fetch(API_ENDPOINTS.PROFILE.GET, {
-      headers: TokenUtil.getAuthHeader()
+      headers: TokenUtil.getAuthHeader(),
     });
 
     if (!response.ok) {
@@ -105,7 +105,7 @@ export const ApiService = {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        ...TokenUtil.getAuthHeader()
+        ...TokenUtil.getAuthHeader(),
       },
       body: JSON.stringify(profileData),
     });
@@ -125,7 +125,7 @@ export const ApiService = {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        ...TokenUtil.getAuthHeader()
+        ...TokenUtil.getAuthHeader(),
       },
       body: JSON.stringify(payload),
     });
@@ -148,95 +148,22 @@ export const ApiService = {
       method: 'POST',
       headers: {
         // Do NOT set Content-Type here — browser sets it with the correct multipart boundary
-        ...TokenUtil.getAuthHeader()
+        ...TokenUtil.getAuthHeader(),
       },
       body: formData,
     });
-
-        /**
-         * Cart
-         */
-        getCart: async () => {
-          const response = await fetch(API_ENDPOINTS.CART.GET, {
-            headers: TokenUtil.getAuthHeader(),
-          });
-
-          if (!response.ok) {
-            clearAuthOnUnauthorized(response, { autoLogout: true });
-          }
-
-          return { response, data: (await parseJsonSafe(response)) || [] };
-        },
-
-        addToCart: async (payload) => {
-          const params = new URLSearchParams();
-          params.set('productId', payload.productId);
-          params.set('quantity', String(payload.quantity || 1));
-
-          if (payload.size) params.set('size', payload.size);
-          if (payload.sugarLevel) params.set('sugarLevel', payload.sugarLevel);
-          if (payload.milkType) params.set('milkType', payload.milkType);
-
-          const response = await fetch(`${API_ENDPOINTS.CART.ADD}?${params.toString()}`, {
-            method: 'POST',
-            headers: TokenUtil.getAuthHeader(),
-          });
-
-          if (!response.ok) {
-            clearAuthOnUnauthorized(response, { autoLogout: true });
-          }
-
-          return { response, data: (await parseJsonSafe(response)) || {} };
-        },
-
-        updateCartQuantity: async (itemId, quantity) => {
-          const response = await fetch(`${API_ENDPOINTS.CART.UPDATE(itemId)}?quantity=${encodeURIComponent(quantity)}`, {
-            method: 'PUT',
-            headers: TokenUtil.getAuthHeader(),
-          });
-
-          if (!response.ok) {
-            clearAuthOnUnauthorized(response, { autoLogout: true });
-          }
-
-          return { response, data: (await parseJsonSafe(response)) || {} };
-        },
-
-        removeFromCart: async (itemId) => {
-          const response = await fetch(API_ENDPOINTS.CART.REMOVE(itemId), {
-            method: 'DELETE',
-            headers: TokenUtil.getAuthHeader(),
-          });
-
-          if (!response.ok) {
-            clearAuthOnUnauthorized(response, { autoLogout: true });
-          }
-
-          return { response, data: (await parseJsonSafe(response)) || {} };
-        },
-
-        clearCart: async () => {
-          const response = await fetch(API_ENDPOINTS.CART.CLEAR, {
-            method: 'POST',
-            headers: TokenUtil.getAuthHeader(),
-          });
-
-          if (!response.ok) {
-            clearAuthOnUnauthorized(response, { autoLogout: true });
-          }
-
-          return { response, data: (await parseJsonSafe(response)) || {} };
-        },
 
     if (!response.ok) {
       clearAuthOnUnauthorized(response, { autoLogout: true });
     }
 
     const data = (await parseJsonSafe(response)) || {};
+
     if (!response.ok) {
-      const fallbackMessage = response.status === 403
-        ? 'Upload forbidden (403). Please log in again and retry.'
-        : `Upload failed (${response.status})`;
+      const fallbackMessage =
+        response.status === 403
+          ? 'Upload forbidden (403). Please log in again and retry.'
+          : `Upload failed (${response.status})`;
 
       return {
         success: false,
@@ -245,81 +172,6 @@ export const ApiService = {
       };
     }
 
-
-        /**
-         * Cart
-         */
-        getCart: async () => {
-          const response = await fetch(API_ENDPOINTS.CART.GET, {
-            headers: TokenUtil.getAuthHeader(),
-          });
-
-          if (!response.ok) {
-            clearAuthOnUnauthorized(response, { autoLogout: true });
-          }
-
-          return { response, data: (await parseJsonSafe(response)) || [] };
-        },
-
-        addToCart: async (payload) => {
-          const params = new URLSearchParams();
-          params.set('productId', payload.productId);
-          params.set('quantity', String(payload.quantity || 1));
-
-          if (payload.size) params.set('size', payload.size);
-          if (payload.sugarLevel) params.set('sugarLevel', payload.sugarLevel);
-          if (payload.milkType) params.set('milkType', payload.milkType);
-
-          const response = await fetch(`${API_ENDPOINTS.CART.ADD}?${params.toString()}`, {
-            method: 'POST',
-            headers: TokenUtil.getAuthHeader(),
-          });
-
-          if (!response.ok) {
-            clearAuthOnUnauthorized(response, { autoLogout: true });
-          }
-
-          return { response, data: (await parseJsonSafe(response)) || {} };
-        },
-
-        updateCartQuantity: async (itemId, quantity) => {
-          const response = await fetch(`${API_ENDPOINTS.CART.UPDATE(itemId)}?quantity=${encodeURIComponent(quantity)}`, {
-            method: 'PUT',
-            headers: TokenUtil.getAuthHeader(),
-          });
-
-          if (!response.ok) {
-            clearAuthOnUnauthorized(response, { autoLogout: true });
-          }
-
-          return { response, data: (await parseJsonSafe(response)) || {} };
-        },
-
-        removeFromCart: async (itemId) => {
-          const response = await fetch(API_ENDPOINTS.CART.REMOVE(itemId), {
-            method: 'DELETE',
-            headers: TokenUtil.getAuthHeader(),
-          });
-
-          if (!response.ok) {
-            clearAuthOnUnauthorized(response, { autoLogout: true });
-          }
-
-          return { response, data: (await parseJsonSafe(response)) || {} };
-        },
-
-        clearCart: async () => {
-          const response = await fetch(API_ENDPOINTS.CART.CLEAR, {
-            method: 'POST',
-            headers: TokenUtil.getAuthHeader(),
-          });
-
-          if (!response.ok) {
-            clearAuthOnUnauthorized(response, { autoLogout: true });
-          }
-
-          return { response, data: (await parseJsonSafe(response)) || {} };
-        },
     return data;
   },
 
@@ -329,7 +181,7 @@ export const ApiService = {
    */
   getPhoto: async () => {
     const response = await fetch(API_ENDPOINTS.PROFILE.GET_PHOTO, {
-      headers: TokenUtil.getAuthHeader()
+      headers: TokenUtil.getAuthHeader(),
     });
 
     if (!response.ok) {
@@ -340,6 +192,84 @@ export const ApiService = {
 
     const blob = await response.blob();
     return URL.createObjectURL(blob);
+  },
+
+  /**
+   * Cart
+   */
+  getCart: async () => {
+    const response = await fetch(API_ENDPOINTS.CART.GET, {
+      headers: TokenUtil.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: true });
+    }
+
+    return { response, data: (await parseJsonSafe(response)) || [] };
+  },
+
+  addToCart: async (payload) => {
+    const params = new URLSearchParams();
+    params.set('productId', payload.productId);
+    params.set('quantity', String(payload.quantity || 1));
+
+    if (payload.size) params.set('size', payload.size);
+    if (payload.sugarLevel) params.set('sugarLevel', payload.sugarLevel);
+    if (payload.milkType) params.set('milkType', payload.milkType);
+
+    const response = await fetch(`${API_ENDPOINTS.CART.ADD}?${params.toString()}`, {
+      method: 'POST',
+      headers: TokenUtil.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: true });
+    }
+
+    return { response, data: (await parseJsonSafe(response)) || {} };
+  },
+
+  updateCartQuantity: async (itemId, quantity) => {
+    const response = await fetch(
+      `${API_ENDPOINTS.CART.UPDATE(itemId)}?quantity=${encodeURIComponent(quantity)}`,
+      {
+        method: 'PUT',
+        headers: TokenUtil.getAuthHeader(),
+      }
+    );
+
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: true });
+    }
+
+    return { response, data: (await parseJsonSafe(response)) || {} };
+  },
+
+  removeFromCart: async (itemId) => {
+    const response = await fetch(API_ENDPOINTS.CART.REMOVE(itemId), {
+      method: 'DELETE',
+      headers: TokenUtil.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: true });
+    }
+
+    return { response, data: (await parseJsonSafe(response)) || {} };
+  },
+
+  clearCart: async () => {
+    const response = await fetch(API_ENDPOINTS.CART.CLEAR, {
+      method: 'POST',
+      headers: TokenUtil.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      clearAuthOnUnauthorized(response, { autoLogout: true });
+    }
+
+    return { response, data: (await parseJsonSafe(response)) || {} };
   },
 
   /**
@@ -477,3 +407,15 @@ export const ApiService = {
         },
       };
     }
+
+    return { response, data };
+  },
+
+  getMyOrders: async () => {
+    const response = await fetch(API_ENDPOINTS.ORDERS.MY, {
+      headers: TokenUtil.getAuthHeader(),
+    });
+
+    return { response, data: (await parseJsonSafe(response)) || [] };
+  },
+};
