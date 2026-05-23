@@ -80,17 +80,20 @@ export function CartProvider({ children }) {
         loadBackendCart().catch((error) => {
           console.warn('Failed to refresh cart after auth token change', error);
         });
-      } else if (guestCartSnapshotRef.current !== null) {
-        setCartItems(guestCartSnapshotRef.current);
       } else {
-        setCartItems([]);
+        const guestSnapshotExists = guestCartSnapshotRef.current !== null;
+        if (guestSnapshotExists) {
+          setCartItems(guestCartSnapshotRef.current);
+        } else {
+          setCartItems([]);
+        }
       }
     };
 
-    globalThis.addEventListener('cafecito:auth-token-changed', handleAuthChange);
+    window.addEventListener('cafecito:auth-token-changed', handleAuthChange);
 
     return () => {
-      globalThis.removeEventListener('cafecito:auth-token-changed', handleAuthChange);
+      window.removeEventListener('cafecito:auth-token-changed', handleAuthChange);
     };
   }, [cartItems, loadBackendCart]);
 
@@ -133,27 +136,28 @@ export function CartProvider({ children }) {
    * If identical item (product + size + sugar + milk) exists, increase quantity
    * Otherwise, create new cart entry with unique cartId
    */
-  const addToCart = useCallback((item) => {
+  const addToCart = useCallback(async (item) => {
     if (TokenUtil.isAuthenticated()) {
-      ApiService.addToCart({
-        productId: item.productId,
-        quantity: item.quantity || 1,
-        size: item.size,
-        sugarLevel: item.sugarLevel,
-        milkType: item.milkType,
-      })
-        .then(({ response, data }) => {
-          if (!response.ok) {
-            throw new Error(data?.message || 'Failed to add item to cart');
-          }
-
-          return loadBackendCart();
-        })
-        .catch((error) => {
-          console.warn('Backend addToCart failed, falling back to local cart', error);
-          applyLocalAddToCart(item);
+      try {
+        const { response, data } = await ApiService.addToCart({
+          productId: item.productId,
+          quantity: item.quantity || 1,
+          size: item.size,
+          sugarLevel: item.sugarLevel,
+          milkType: item.milkType,
         });
-      return;
+
+        if (!response.ok) {
+          throw new Error(data?.message || 'Failed to add item to cart');
+        }
+
+        await loadBackendCart();
+        return;
+      } catch (error) {
+        console.warn('Backend addToCart failed, falling back to local cart', error);
+        applyLocalAddToCart(item);
+        return;
+      }
     }
 
     applyLocalAddToCart(item);
@@ -162,21 +166,21 @@ export function CartProvider({ children }) {
   /**
    * Remove item from cart by cartId
    */
-  const removeFromCart = useCallback((cartId) => {
+  const removeFromCart = useCallback(async (cartId) => {
     if (TokenUtil.isAuthenticated()) {
-      ApiService.removeFromCart(cartId)
-        .then(({ response }) => {
-          if (!response.ok) {
-            throw new Error('Failed to remove item from cart');
-          }
+      try {
+        const { response } = await ApiService.removeFromCart(cartId);
+        if (!response.ok) {
+          throw new Error('Failed to remove item from cart');
+        }
 
-          return loadBackendCart();
-        })
-        .catch((error) => {
-          console.warn('Backend removeFromCart failed, falling back to local cart', error);
-          setCartItems((prev) => prev.filter((ci) => ci.cartId !== cartId));
-        });
-      return;
+        await loadBackendCart();
+        return;
+      } catch (error) {
+        console.warn('Backend removeFromCart failed, falling back to local cart', error);
+        setCartItems((prev) => prev.filter((ci) => ci.cartId !== cartId));
+        return;
+      }
     }
 
     setCartItems((prev) => prev.filter((ci) => ci.cartId !== cartId));
@@ -185,21 +189,21 @@ export function CartProvider({ children }) {
   /**
    * Update quantity for a specific cart item
    */
-  const updateCartQuantity = useCallback((cartId, quantity) => {
+  const updateCartQuantity = useCallback(async (cartId, quantity) => {
     if (TokenUtil.isAuthenticated()) {
-      ApiService.updateCartQuantity(cartId, quantity)
-        .then(({ response }) => {
-          if (!response.ok) {
-            throw new Error('Failed to update cart quantity');
-          }
+      try {
+        const { response } = await ApiService.updateCartQuantity(cartId, quantity);
+        if (!response.ok) {
+          throw new Error('Failed to update cart quantity');
+        }
 
-          return loadBackendCart();
-        })
-        .catch((error) => {
-          console.warn('Backend updateCartQuantity failed, falling back to local cart', error);
-          applyLocalQuantityUpdate(cartId, quantity);
-        });
-      return;
+        await loadBackendCart();
+        return;
+      } catch (error) {
+        console.warn('Backend updateCartQuantity failed, falling back to local cart', error);
+        applyLocalQuantityUpdate(cartId, quantity);
+        return;
+      }
     }
 
     applyLocalQuantityUpdate(cartId, quantity);
@@ -208,21 +212,21 @@ export function CartProvider({ children }) {
   /**
    * Clear entire cart
    */
-  const clearCart = useCallback(() => {
+  const clearCart = useCallback(async () => {
     if (TokenUtil.isAuthenticated()) {
-      ApiService.clearCart()
-        .then(({ response }) => {
-          if (!response.ok) {
-            throw new Error('Failed to clear cart');
-          }
+      try {
+        const { response } = await ApiService.clearCart();
+        if (!response.ok) {
+          throw new Error('Failed to clear cart');
+        }
 
-          return loadBackendCart();
-        })
-        .catch((error) => {
-          console.warn('Backend clearCart failed, clearing local cart', error);
-          setCartItems([]);
-        });
-      return;
+        await loadBackendCart();
+        return;
+      } catch (error) {
+        console.warn('Backend clearCart failed, clearing local cart', error);
+        setCartItems([]);
+        return;
+      }
     }
 
     setCartItems([]);
