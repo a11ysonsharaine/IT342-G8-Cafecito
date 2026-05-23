@@ -86,24 +86,13 @@ public class ProfileService {
 
     @org.springframework.transaction.annotation.Transactional
     public ApiResponse updateProfile(String email, UpdateProfileRequest request) {
-        User user = findByEmail(email);
-
-        if (user == null) {
-            return new ApiResponse(false, USER_NOT_FOUND);
-        }
-
-        if (request.getName() != null) {
-            user.setName(request.getName());
-        }
-        if (request.getPhoneNumber() != null) {
-            user.setPhoneNumber(request.getPhoneNumber());
-        }
-
-        String sql = "UPDATE users SET full_name = ?, phone_number = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?";
-        int rowsUpdated = jdbcTemplate.update(sql, user.getName(), user.getPhoneNumber(), email);
+        int rowsUpdated = userRepository.updateProfileFields(
+                email,
+                request.getName(),
+                request.getPhoneNumber());
 
         if (rowsUpdated == 0) {
-            return new ApiResponse(false, "Failed to update profile");
+            return new ApiResponse(false, USER_NOT_FOUND);
         }
 
         User saved = findByEmail(email);
